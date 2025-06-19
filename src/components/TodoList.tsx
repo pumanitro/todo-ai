@@ -31,6 +31,7 @@ interface Todo {
   timestamp: number;
   order: number;
   description?: string;
+  category: 'today' | 'backlog';
 }
 
 interface TodoListProps {
@@ -61,6 +62,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           timestamp: value.timestamp,
           order: value.order || 0,
           description: value.description || '',
+          category: value.category || 'today', // Default to 'today' for existing tasks
         }));
         
         // Sort by order (lowest first), then by timestamp (newest first) for items without order
@@ -89,13 +91,15 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
     try {
       const todosRef = ref(database, `users/${user.uid}/todos`);
-      // Get the lowest order number and subtract 1 to put new todo at the top
-      const minOrder = todos.length > 0 ? Math.min(...todos.map(t => t.order)) : 0;
+      // Get the lowest order number for 'today' category and subtract 1 to put new todo at the top
+      const todayTodos = todos.filter(t => t.category === 'today' && !t.completed);
+      const minOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
       await push(todosRef, {
         text: newTodo.trim(),
         completed: false,
         timestamp: Date.now(),
         order: minOrder - 1,
+        category: 'today', // New tasks default to 'today'
       });
       setNewTodo('');
     } catch (error) {
@@ -154,15 +158,16 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         const minCompletedOrder = completedTodos.length > 0 ? Math.min(...completedTodos.map(t => t.order)) : 0;
         newOrder = minCompletedOrder - 1;
       } else {
-        // Task is being uncompleted - put at top of active list
-        const activeTodos = todos.filter(todo => !todo.completed);
-        const minActiveOrder = activeTodos.length > 0 ? Math.min(...activeTodos.map(t => t.order)) : 0;
-        newOrder = minActiveOrder - 1;
+        // Task is being uncompleted - put at top of today list
+        const todayTodos = todos.filter(todo => !todo.completed && todo.category === 'today');
+        const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+        newOrder = minTodayOrder - 1;
       }
       
       await update(todoRef, { 
         completed: newCompletedStatus,
-        order: newOrder
+        order: newOrder,
+        category: newCompletedStatus ? 'today' : 'today' // Keep category, just change completion status
       });
     } catch (error) {
       console.error('Error updating todo:', error);
@@ -178,26 +183,51 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
+    const sourceDroppableId = result.source.droppableId;
+    const destinationDroppableId = result.destination.droppableId;
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
 
-    if (sourceIndex === destinationIndex) return;
+    // If dropped in the same position, do nothing
+    if (sourceDroppableId === destinationDroppableId && sourceIndex === destinationIndex) return;
 
     try {
-      // Create a new array with the reordered items (only active todos for drag/drop)
-      const activeTodos = todos.filter(todo => !todo.completed);
-      const reorderedTodos = Array.from(activeTodos);
-      const [reorderedItem] = reorderedTodos.splice(sourceIndex, 1);
-      reorderedTodos.splice(destinationIndex, 0, reorderedItem);
+      const draggedTodoId = result.draggableId;
+      const draggedTodo = todos.find(todo => todo.id === draggedTodoId);
+      if (!draggedTodo) return;
 
-      // Update the order values for all affected active todos
-      const updates: { [key: string]: any } = {};
-      reorderedTodos.forEach((todo, index) => {
-        updates[`users/${user.uid}/todos/${todo.id}/order`] = index;
+      // Determine the new category
+      const newCategory = destinationDroppableId as 'today' | 'backlog';
+      
+      // Get the todos in the destination list
+      const destinationTodos = todos.filter(todo => 
+        !todo.completed && todo.category === newCategory
+      );
+
+      // Calculate the new order
+      let newOrder;
+      if (destinationTodos.length === 0) {
+        newOrder = 0;
+      } else if (destinationIndex === 0) {
+        // Moving to the top
+        newOrder = Math.min(...destinationTodos.map(t => t.order)) - 1;
+      } else if (destinationIndex >= destinationTodos.length) {
+        // Moving to the bottom
+        newOrder = Math.max(...destinationTodos.map(t => t.order)) + 1;
+      } else {
+        // Moving to the middle
+        const prevOrder = destinationTodos[destinationIndex - 1]?.order || 0;
+        const nextOrder = destinationTodos[destinationIndex]?.order || 0;
+        newOrder = (prevOrder + nextOrder) / 2;
+      }
+
+      // Update the dragged todo
+      const todoRef = ref(database, `users/${user.uid}/todos/${draggedTodoId}`);
+      await update(todoRef, {
+        category: newCategory,
+        order: newOrder
       });
 
-      // Update the database with the new order
-      await update(ref(database), updates);
     } catch (error) {
       console.error('Error reordering todos:', error);
     }
@@ -211,7 +241,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }
   };
 
-  const activeTodos = todos.filter(todo => !todo.completed);
+  const todayTodos = todos.filter(todo => !todo.completed && todo.category === 'today');
+  const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
   const completedTodos = todos.filter(todo => todo.completed);
 
   return (
@@ -264,91 +295,211 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             </Button>
           </Box>
 
-          <Typography variant="h6" gutterBottom>
-            Active Tasks ({activeTodos.length})
-          </Typography>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Typography variant="h6" gutterBottom>
+              Today ({todayTodos.length})
+            </Typography>
 
-          {activeTodos.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography color="text.secondary">
-                No active tasks. Great job! 🎉
-              </Typography>
-            </Box>
-          ) : (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="todos">
-                {(provided) => (
-                  <List
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                  >
-                    {activeTodos.map((todo, index) => (
-                      <Draggable 
-                        key={todo.id} 
-                        draggableId={todo.id} 
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <ListItem 
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            divider 
-                            button
-                            onClick={() => handleTodoClick(todo)}
-                            sx={{ 
-                              cursor: snapshot.isDragging ? 'grabbing' : 'grab',
-                              backgroundColor: snapshot.isDragging ? 'action.hover' : 'transparent',
-                              '&:hover': {
-                                backgroundColor: 'action.hover',
-                              },
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <Box 
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ display: 'flex', alignItems: 'center' }}
-                            >
-                              <Checkbox
-                                checked={todo.completed}
-                                onChange={() => toggleTodo(todo.id, todo.completed)}
-                                icon={<RadioButtonUnchecked />}
-                                checkedIcon={<CheckCircle />}
-                                color="primary"
-                              />
-                            </Box>
-                            <ListItemText
-                              primary={
-                                <Typography>
-                                  {todo.text}
-                                </Typography>
-                              }
-                            />
-                            <Box 
+            <Droppable droppableId="today">
+              {(provided, snapshot) => (
+                <Box
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  sx={{
+                    mb: 3,
+                    minHeight: todayTodos.length === 0 ? 60 : 'auto',
+                    backgroundColor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
+                    border: snapshot.isDraggingOver ? '2px dashed' : '2px solid transparent',
+                    borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {todayTodos.length === 0 ? (
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      py: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: 60,
+                    }}>
+                      <Typography color="text.secondary">
+                        {snapshot.isDraggingOver ? 'Drop here for today' : 'No tasks for today.'}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <List>
+                      {todayTodos.map((todo, index) => (
+                        <Draggable 
+                          key={todo.id} 
+                          draggableId={todo.id} 
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <ListItem 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              divider 
+                              button
+                              onClick={() => handleTodoClick(todo)}
                               sx={{ 
-                                display: 'flex', 
+                                cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                                backgroundColor: snapshot.isDragging ? 'action.hover' : 'transparent',
+                                '&:hover': {
+                                  backgroundColor: 'action.hover',
+                                },
+                                display: 'flex',
                                 alignItems: 'center',
-                                ml: 1,
-                                color: 'text.disabled',
-                                gap: 0.5,
                               }}
                             >
-                              {todo.description && (
-                                <Description fontSize="small" />
-                              )}
-                              <DragIndicator />
-                            </Box>
-                          </ListItem>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </List>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
+                              <Box 
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{ display: 'flex', alignItems: 'center' }}
+                              >
+                                <Checkbox
+                                  checked={todo.completed}
+                                  onChange={() => toggleTodo(todo.id, todo.completed)}
+                                  icon={<RadioButtonUnchecked />}
+                                  checkedIcon={<CheckCircle />}
+                                  color="primary"
+                                />
+                              </Box>
+                              <ListItemText
+                                primary={
+                                  <Typography>
+                                    {todo.text}
+                                  </Typography>
+                                }
+                              />
+                              <Box 
+                                sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  ml: 1,
+                                  color: 'text.disabled',
+                                  gap: 0.5,
+                                }}
+                              >
+                                {todo.description && (
+                                  <Description fontSize="small" />
+                                )}
+                                <DragIndicator />
+                              </Box>
+                            </ListItem>
+                          )}
+                        </Draggable>
+                      ))}
+                    </List>
+                  )}
+                  {provided.placeholder}
+                </Box>
+              )}
+            </Droppable>
+
+            <Typography variant="h6" gutterBottom>
+              Backlog ({backlogTodos.length})
+            </Typography>
+
+            <Droppable droppableId="backlog">
+              {(provided, snapshot) => (
+                <Box
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  sx={{
+                    mb: 3,
+                    minHeight: backlogTodos.length === 0 ? 60 : 'auto',
+                    backgroundColor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
+                    border: snapshot.isDraggingOver ? '2px dashed' : '2px solid transparent',
+                    borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {backlogTodos.length === 0 ? (
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      py: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: 60,
+                    }}>
+                      <Typography color="text.secondary">
+                        {snapshot.isDraggingOver ? 'Drop here for backlog' : 'No tasks in the backlog.'}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <List>
+                      {backlogTodos.map((todo, index) => (
+                        <Draggable 
+                          key={todo.id} 
+                          draggableId={todo.id} 
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <ListItem 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              divider 
+                              button
+                              onClick={() => handleTodoClick(todo)}
+                              sx={{ 
+                                cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                                backgroundColor: snapshot.isDragging ? 'action.hover' : 'transparent',
+                                '&:hover': {
+                                  backgroundColor: 'action.hover',
+                                },
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Box 
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{ display: 'flex', alignItems: 'center' }}
+                              >
+                                <Checkbox
+                                  checked={todo.completed}
+                                  onChange={() => toggleTodo(todo.id, todo.completed)}
+                                  icon={<RadioButtonUnchecked />}
+                                  checkedIcon={<CheckCircle />}
+                                  color="primary"
+                                />
+                              </Box>
+                              <ListItemText
+                                primary={
+                                  <Typography>
+                                    {todo.text}
+                                  </Typography>
+                                }
+                              />
+                              <Box 
+                                sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  ml: 1,
+                                  color: 'text.disabled',
+                                  gap: 0.5,
+                                }}
+                              >
+                                {todo.description && (
+                                  <Description fontSize="small" />
+                                )}
+                                <DragIndicator />
+                              </Box>
+                            </ListItem>
+                          )}
+                        </Draggable>
+                      ))}
+                    </List>
+                  )}
+                  {provided.placeholder}
+                </Box>
+              )}
+            </Droppable>
+          </DragDropContext>
 
           {completedTodos.length > 0 && (
             <Box sx={{ mt: 4 }}>
