@@ -5,7 +5,8 @@ export interface Todo {
   timestamp: number;
   order: number;
   description?: string;
-  category: 'today' | 'backlog';
+  category: 'today' | 'backlog' | 'postponed';
+  dueDate?: string; // ISO date string (YYYY-MM-DD)
 }
 
-export type TodoCategory = 'today' | 'backlog'; 
+export type TodoCategory = 'today' | 'backlog' | 'postponed'; 

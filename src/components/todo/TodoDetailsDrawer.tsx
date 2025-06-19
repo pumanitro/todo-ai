@@ -7,7 +7,7 @@ interface TodoDetailsDrawerProps {
   isOpen: boolean;
   todo: Todo | null;
   onClose: () => void;
-  onSaveEdit: (field: 'text' | 'description', value: string) => void;
+  onSaveEdit: (field: 'text' | 'description' | 'dueDate', value: string) => void;
   onDelete: (todoId: string) => void;
 }
 
@@ -20,11 +20,13 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
 }) => {
   const [editedName, setEditedName] = useState<string>('');
   const [editedDescription, setEditedDescription] = useState<string>('');
+  const [editedDueDate, setEditedDueDate] = useState<string>('');
 
   useEffect(() => {
     if (todo) {
       setEditedName(todo.text);
       setEditedDescription(todo.description || '');
+      setEditedDueDate(todo.dueDate || '');
     }
   }, [todo]);
 
@@ -32,6 +34,25 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
     onClose();
     setEditedName('');
     setEditedDescription('');
+    setEditedDueDate('');
+  };
+
+  const formatDueDate = (dueDate: string) => {
+    if (!dueDate) return 'No due date';
+    const today = new Date().toISOString().split('T')[0];
+    const due = new Date(dueDate);
+    const todayDate = new Date(today);
+    const diffDays = Math.ceil((due.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return `Overdue by ${Math.abs(diffDays)} day(s)`;
+    } else if (diffDays === 0) {
+      return 'Due today';
+    } else if (diffDays === 1) {
+      return 'Due tomorrow';
+    } else {
+      return `Due in ${diffDays} day(s)`;
+    }
   };
 
   return (
@@ -75,14 +96,31 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
               placeholder="Add a description for this task..."
               sx={{ mb: 2 }}
             />
+            <TextField
+              fullWidth
+              type="date"
+              label="Due Date"
+              variant="outlined"
+              value={editedDueDate}
+              onChange={(e) => setEditedDueDate(e.target.value)}
+              onBlur={() => onSaveEdit('dueDate', editedDueDate)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              sx={{ mb: 2 }}
+            />
           </Box>
           
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Added: {new Date(todo.timestamp).toLocaleString()}
           </Typography>
           
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Status: {todo.completed ? 'Completed' : 'Active'}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Due: {formatDueDate(todo.dueDate || '')}
           </Typography>
 
           <Button

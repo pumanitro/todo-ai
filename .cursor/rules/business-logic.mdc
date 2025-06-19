@@ -6,15 +6,22 @@ alwaysApply: true
 # Business Logic Memory Bank
 
 ## Data Model
-- **Todo**: `{id, text, completed, timestamp, order, description?, category}`
-- **Categories**: `'today' | 'backlog'`
+- **Todo**: `{id, text, completed, timestamp, order, description?, category, dueDate?}`
+- **Categories**: `'today' | 'backlog' | 'postponed'`
 - **User Data**: Firebase path `users/${uid}/todos/`
+- **Due Date**: ISO date string (YYYY-MM-DD), optional field
 
 ## Core Rules
-- New todos → backlog category, `order = minBacklogOrder - 1`
-- Completed todos → move to bottom with `order = minCompletedOrder - 1`  
-- Uncompleted todos → move to today category with `order = minTodayOrder - 1`
+- New todos → auto-categorized by due date logic
+- Completed todos → keep current category, move to bottom with `order = minCompletedOrder - 1`  
+- Uncompleted todos → recategorize by due date logic with `order = minCategoryOrder - 1`
 - Sorting: Primary by `order` ASC, secondary by `timestamp` DESC
+
+## Due Date Categorization
+- **No due date** → backlog category
+- **Due today or overdue** → today category
+- **Due in future** → postponed category
+- **Due date changes** → automatic recategorization + reordering
 
 ## State Management
 - Firebase Realtime Database for persistence
@@ -22,20 +29,29 @@ alwaysApply: true
 - User authentication via Firebase Auth
 
 ## Key Operations
-- **Add**: Push to backlog with next lowest order
+- **Add**: Auto-categorize by due date, `order = minCategoryOrder - 1`
 - **Toggle**: Update completed status + reorder + category logic
 - **Drag**: Update category + calculate new order based on position
-- **Edit**: Update text/description in-place
+- **Edit**: Update text/description/dueDate + auto-recategorize on due date change
 - **Delete**: Remove from Firebase + close any open drawers
 
 ## UI Flow
-- Today section → active tasks for current day
-- Backlog section → future/queued tasks
+- Today section → active tasks for current day + overdue tasks
+- Postponed section → tasks with future due dates, grouped by date (collapsible, hidden by default)
+- Backlog section → tasks without due dates
 - Completed section → finished tasks (collapsed)
 - Drawer → detailed view/edit for selected todo
 
+## Postponed Tasks Grouping
+- **Date Grouping**: Group postponed tasks by due date, nearest dates first
+- **Group Sorting**: Today → Tomorrow → Future dates (chronological) → No Date (last)
+- **Date Labels**: "Today", "Tomorrow", or "Day, Mon DD" format
+- **Task Count**: Show count per date group in parentheses
+- **Visual Hierarchy**: Subtitle1 typography for group headers, proper spacing between groups
+
 ## UI Design Pattern
 - **Compact Layout**: Reduced spacing, small components (py: 0.5, mb: 1-2)
-- **Todo Items**: Bordered boxes with "Drag to reorder" text below each item
+- **Todo Items**: Bordered boxes with due date chips and "Drag to reorder" text
+- **Due Date Display**: Color-coded chips (error=overdue, warning=today, info=soon)
 - **Typography**: body2 for items, small icons, reduced font sizes
 - **Flexbox Positioning**: Use justify-content/align-items instead of absolute positioning

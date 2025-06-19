@@ -1,6 +1,6 @@
 import React from 'react';
-import { ListItem, ListItemText, Checkbox, Box, Typography } from '@mui/material';
-import { CheckCircle, RadioButtonUnchecked, DragIndicator, Description } from '@mui/icons-material';
+import { ListItem, ListItemText, Checkbox, Box, Typography, Chip } from '@mui/material';
+import { CheckCircle, RadioButtonUnchecked, DragIndicator, Description, Event } from '@mui/icons-material';
 import { Draggable } from '@hello-pangea/dnd';
 import { Todo } from '../../types/todo';
 
@@ -10,9 +10,36 @@ interface TodoItemProps {
   onToggle: (todoId: string, completed: boolean) => void;
   onClick: (todo: Todo) => void;
   isDraggable?: boolean;
+  hideDueDate?: boolean;
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true }) => {
+const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false }) => {
+  const getDueDateDisplay = (dueDate: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const due = new Date(dueDate);
+    const todayDate = new Date(today);
+    const diffDays = Math.ceil((due.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    let color: 'error' | 'warning' | 'info' | 'default' = 'default';
+    let label = due.toLocaleDateString();
+
+    if (diffDays < 0) {
+      color = 'error';
+      label = `Overdue (${Math.abs(diffDays)}d)`;
+    } else if (diffDays === 0) {
+      color = 'warning';
+      label = 'Today';
+    } else if (diffDays === 1) {
+      color = 'info';
+      label = 'Tomorrow';
+    } else if (diffDays <= 7) {
+      color = 'info';
+      label = `${diffDays}d`;
+    }
+
+    return { color, label };
+  };
+
   const todoContent = (provided?: any, snapshot?: any) => (
     <Box sx={{ mb: 1 }}>
       <ListItem 
@@ -52,20 +79,33 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
             sx={{ p: 0.5 }}
           />
         </Box>
-        <ListItemText
-          primary={
-            <Typography 
-              variant="body2"
-              sx={todo.completed ? { 
-                textDecoration: 'line-through',
-                opacity: 0.6,
-              } : {}}
-            >
-              {todo.text}
-            </Typography>
-          }
-          sx={{ m: 0 }}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <Typography 
+            variant="body2"
+            sx={todo.completed ? { 
+              textDecoration: 'line-through',
+              opacity: 0.6,
+            } : {}}
+          >
+            {todo.text}
+          </Typography>
+          {todo.dueDate && !hideDueDate && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+              <Event fontSize="small" sx={{ color: 'text.disabled', fontSize: '14px' }} />
+              <Chip
+                label={getDueDateDisplay(todo.dueDate).label}
+                color={getDueDateDisplay(todo.dueDate).color}
+                size="small"
+                variant="outlined"
+                sx={{ 
+                  height: '20px', 
+                  fontSize: '0.7rem',
+                  opacity: todo.completed ? 0.6 : 1,
+                }}
+              />
+            </Box>
+          )}
+        </Box>
         <Box 
           sx={{ 
             display: 'flex', 

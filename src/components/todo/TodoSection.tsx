@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, List } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { Droppable } from '@hello-pangea/dnd';
 import { Todo, TodoCategory } from '../../types/todo';
 import TodoItem from './TodoItem';
@@ -19,11 +19,44 @@ const TodoSection: React.FC<TodoSectionProps> = ({
   onToggleTodo, 
   onTodoClick 
 }) => {
+  const getEmptyStateMessage = () => {
+    switch (category) {
+      case 'today':
+        return {
+          dropMessage: "Drop here to work on today!",
+          defaultMessage: "🎯 Drop a task from backlog to work on today",
+          subMessage: "Drag tasks here to prioritize them for today"
+        };
+      case 'postponed':
+        return {
+          dropMessage: "Drop here for postponed tasks",
+          defaultMessage: "📅 Tasks with future due dates appear here",
+          subMessage: "Set a due date on tasks to automatically organize them"
+        };
+      case 'backlog':
+        return {
+          dropMessage: "Drop here for backlog",
+          defaultMessage: "No tasks in the backlog.",
+          subMessage: ""
+        };
+      default:
+        return {
+          dropMessage: `Drop here for ${category}`,
+          defaultMessage: `No tasks in ${category}.`,
+          subMessage: ""
+        };
+    }
+  };
+
+  const emptyState = getEmptyStateMessage();
+
   return (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
-        {title} ({todos.length})
-      </Typography>
+    <Box sx={{ mb: title ? 2 : 1 }}>
+      {title && (
+        <Typography variant="h6" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
+          {title} ({todos.length})
+        </Typography>
+      )}
 
       <Droppable droppableId={category}>
         {(provided, snapshot) => (
@@ -48,37 +81,26 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: category === 'today' ? 60 : 50,
-                backgroundColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.50' : 'transparent',
+                height: category === 'today' || category === 'postponed' ? 60 : 50,
+                backgroundColor: (category === 'today' || category === 'postponed') && !snapshot.isDraggingOver ? 'grey.50' : 'transparent',
                 borderRadius: 1,
-                border: category === 'today' && !snapshot.isDraggingOver ? '2px dashed' : 'none',
-                borderColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.300' : 'transparent',
+                border: (category === 'today' || category === 'postponed') && !snapshot.isDraggingOver ? '2px dashed' : 'none',
+                borderColor: (category === 'today' || category === 'postponed') && !snapshot.isDraggingOver ? 'grey.300' : 'transparent',
               }}>
-                {category === 'today' ? (
-                  <>
-                    <Typography 
-                      variant="body2" 
-                      color={snapshot.isDraggingOver ? "primary.main" : "text.secondary"}
-                      fontWeight={snapshot.isDraggingOver ? 600 : 400}
-                      sx={{ fontSize: '0.9rem' }}
-                    >
-                      {snapshot.isDraggingOver 
-                        ? "Drop here to work on today!" 
-                        : "🎯 Drop a task from backlog to work on today"
-                      }
-                    </Typography>
-                    {!snapshot.isDraggingOver && (
-                      <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
-                        Drag tasks here to prioritize them for today
-                      </Typography>
-                    )}
-                  </>
-                ) : (
-                  <Typography color="text.secondary" variant="body2" sx={{ fontSize: '0.9rem' }}>
-                    {snapshot.isDraggingOver 
-                      ? `Drop here for ${category}` 
-                      : "No tasks in the backlog."
-                    }
+                <Typography 
+                  variant="body2" 
+                  color={snapshot.isDraggingOver ? "primary.main" : "text.secondary"}
+                  fontWeight={snapshot.isDraggingOver ? 600 : 400}
+                  sx={{ fontSize: '0.9rem' }}
+                >
+                  {snapshot.isDraggingOver 
+                    ? emptyState.dropMessage
+                    : emptyState.defaultMessage
+                  }
+                </Typography>
+                {!snapshot.isDraggingOver && emptyState.subMessage && (
+                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
+                    {emptyState.subMessage}
                   </Typography>
                 )}
               </Box>
