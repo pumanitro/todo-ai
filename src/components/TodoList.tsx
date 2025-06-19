@@ -12,12 +12,12 @@ import {
   Checkbox,
   Chip,
   Container,
-  Tabs,
-  Tab,
   Drawer,
   Divider,
+  Collapse,
+  IconButton,
 } from '@mui/material';
-import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator } from '@mui/icons-material';
+import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { database } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
@@ -30,15 +30,13 @@ interface Todo {
   order: number;
 }
 
-type FilterType = 'all' | 'active' | 'completed';
-
 const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [filter, setFilter] = useState<FilterType>('all');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
   useEffect(() => {
     const todosRef = ref(database, 'todos');
@@ -139,12 +137,13 @@ const TodoList: React.FC = () => {
     if (sourceIndex === destinationIndex) return;
 
     try {
-      // Create a new array with the reordered items
-      const reorderedTodos = Array.from(filteredTodos);
+      // Create a new array with the reordered items (only active todos for drag/drop)
+      const activeTodos = todos.filter(todo => !todo.completed);
+      const reorderedTodos = Array.from(activeTodos);
       const [reorderedItem] = reorderedTodos.splice(sourceIndex, 1);
       reorderedTodos.splice(destinationIndex, 0, reorderedItem);
 
-      // Update the order values for all affected todos
+      // Update the order values for all affected active todos
       const updates: { [key: string]: any } = {};
       reorderedTodos.forEach((todo, index) => {
         updates[`todos/${todo.id}/order`] = index;
@@ -157,19 +156,8 @@ const TodoList: React.FC = () => {
     }
   };
 
-  const filteredTodos = todos.filter(todo => {
-    switch (filter) {
-      case 'active':
-        return !todo.completed;
-      case 'completed':
-        return todo.completed;
-      default:
-        return true;
-    }
-  });
-
-  const completedCount = todos.filter(todo => todo.completed).length;
-  const activeCount = todos.filter(todo => !todo.completed).length;
+  const activeTodos = todos.filter(todo => !todo.completed);
+  const completedTodos = todos.filter(todo => todo.completed);
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -206,20 +194,14 @@ const TodoList: React.FC = () => {
             </Button>
           </Box>
 
-          <Box sx={{ mb: 3 }}>
-            <Tabs value={filter} onChange={(_, newValue) => setFilter(newValue)}>
-              <Tab label={`All (${todos.length})`} value="all" />
-              <Tab label={`Active (${activeCount})`} value="active" />
-              <Tab label={`Completed (${completedCount})`} value="completed" />
-            </Tabs>
-          </Box>
+          <Typography variant="h6" gutterBottom>
+            Active Tasks ({activeTodos.length})
+          </Typography>
 
-          {filteredTodos.length === 0 ? (
+          {activeTodos.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography color="text.secondary">
-                {filter === 'all' ? 'No tasks yet. Add your first task above! 🎉' :
-                 filter === 'active' ? 'No active tasks. Great job! 🎉' :
-                 'No completed tasks yet. Keep going! 💪'}
+                No active tasks. Great job! 🎉
               </Typography>
             </Box>
           ) : (
@@ -230,7 +212,7 @@ const TodoList: React.FC = () => {
                     {...provided.droppableProps}
                     ref={provided.innerRef}
                   >
-                    {filteredTodos.map((todo, index) => (
+                    {activeTodos.map((todo, index) => (
                       <Draggable 
                         key={todo.id} 
                         draggableId={todo.id} 
@@ -268,12 +250,7 @@ const TodoList: React.FC = () => {
                             </Box>
                             <ListItemText
                               primary={
-                                <Typography 
-                                  sx={{ 
-                                    textDecoration: todo.completed ? 'line-through' : 'none',
-                                    opacity: todo.completed ? 0.6 : 1,
-                                  }}
-                                >
+                                <Typography>
                                   {todo.text}
                                 </Typography>
                               }
@@ -297,6 +274,76 @@ const TodoList: React.FC = () => {
                 )}
               </Droppable>
             </DragDropContext>
+          )}
+
+          {completedTodos.length > 0 && (
+            <Box sx={{ mt: 4 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  cursor: 'pointer',
+                  py: 1,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
+                  borderRadius: 1,
+                }}
+                onClick={() => setShowCompleted(!showCompleted)}
+              >
+                <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                  Completed Tasks ({completedTodos.length})
+                </Typography>
+                <IconButton size="small">
+                  {showCompleted ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </Box>
+              
+              <Collapse in={showCompleted}>
+                <List>
+                  {completedTodos.map((todo) => (
+                    <ListItem 
+                      key={todo.id}
+                      divider 
+                      button
+                      onClick={() => handleTodoClick(todo)}
+                      sx={{ 
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Box 
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ display: 'flex', alignItems: 'center' }}
+                      >
+                        <Checkbox
+                          checked={todo.completed}
+                          onChange={() => toggleTodo(todo.id, todo.completed)}
+                          icon={<RadioButtonUnchecked />}
+                          checkedIcon={<CheckCircle />}
+                          color="primary"
+                        />
+                      </Box>
+                      <ListItemText
+                        primary={
+                          <Typography 
+                            sx={{ 
+                              textDecoration: 'line-through',
+                              opacity: 0.6,
+                            }}
+                          >
+                            {todo.text}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+            </Box>
           )}
         </CardContent>
       </Card>
