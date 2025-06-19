@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, Database } from 'firebase/database';
 import { getAnalytics } from "firebase/analytics";
+import { getAuth, Auth } from 'firebase/auth';
 
 // Your Firebase configuration
 // Replace these values with your actual Firebase project configuration
@@ -21,5 +22,6 @@ const app = initializeApp(firebaseConfig);
 // Initialize Realtime Database and get a reference to the service
 export const database: Database = getDatabase(app);
 export const analytics = getAnalytics(app);
+export const auth: Auth = getAuth(app);
 
 export default app; 

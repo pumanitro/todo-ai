@@ -16,11 +16,13 @@ import {
   Divider,
   Collapse,
   IconButton,
+  Avatar,
 } from '@mui/material';
-import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator, ExpandMore, ExpandLess, Logout } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { database } from '../firebase/config';
+import { database, auth } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
+import { signOut, User } from 'firebase/auth';
 
 interface Todo {
   id: string;
@@ -30,7 +32,11 @@ interface Todo {
   order: number;
 }
 
-const TodoList: React.FC = () => {
+interface TodoListProps {
+  user: User;
+}
+
+const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -39,7 +45,8 @@ const TodoList: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
   useEffect(() => {
-    const todosRef = ref(database, 'todos');
+    // Use user-specific path
+    const todosRef = ref(database, `users/${user.uid}/todos`);
     
     const unsubscribe = onValue(todosRef, (snapshot) => {
       const data = snapshot.val();
@@ -71,13 +78,13 @@ const TodoList: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user.uid]);
 
   const addTodo = async () => {
     if (!newTodo.trim()) return;
 
     try {
-      const todosRef = ref(database, 'todos');
+      const todosRef = ref(database, `users/${user.uid}/todos`);
       // Get the highest order number and add 1 for the new todo
       const maxOrder = todos.length > 0 ? Math.max(...todos.map(t => t.order)) : -1;
       await push(todosRef, {
@@ -94,7 +101,7 @@ const TodoList: React.FC = () => {
 
   const deleteTodo = async (todoId: string) => {
     try {
-      const todoRef = ref(database, `todos/${todoId}`);
+      const todoRef = ref(database, `users/${user.uid}/todos/${todoId}`);
       await remove(todoRef);
       setIsDrawerOpen(false);
       setSelectedTodo(null);
@@ -115,7 +122,7 @@ const TodoList: React.FC = () => {
 
   const toggleTodo = async (todoId: string, completed: boolean) => {
     try {
-      const todoRef = ref(database, `todos/${todoId}`);
+      const todoRef = ref(database, `users/${user.uid}/todos/${todoId}`);
       await update(todoRef, { completed: !completed });
     } catch (error) {
       console.error('Error updating todo:', error);
@@ -146,7 +153,7 @@ const TodoList: React.FC = () => {
       // Update the order values for all affected active todos
       const updates: { [key: string]: any } = {};
       reorderedTodos.forEach((todo, index) => {
-        updates[`todos/${todo.id}/order`] = index;
+        updates[`users/${user.uid}/todos/${todo.id}/order`] = index;
       });
 
       // Update the database with the new order
@@ -156,16 +163,39 @@ const TodoList: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   const activeTodos = todos.filter(todo => !todo.completed);
   const completedTodos = todos.filter(todo => todo.completed);
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Chip 
-          label={isConnected ? 'Connected' : 'Connecting...'} 
-          color={isConnected ? 'success' : 'warning'}
-        />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+          <Typography variant="h6">
+            Hello, {user.displayName?.split(' ')[0] || 'User'}!
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Chip 
+            label={isConnected ? 'Connected' : 'Connecting...'} 
+            color={isConnected ? 'success' : 'warning'}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<Logout />}
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        </Box>
       </Box>
 
       <Card sx={{ mb: 4 }}>
