@@ -60,14 +60,14 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const addTodo = async (text: string) => {
     try {
       const todosRef = ref(database, `users/${user.uid}/todos`);
-      const todayTodos = todos.filter(t => t.category === 'today' && !t.completed);
-      const minOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+      const backlogTodos = todos.filter(t => t.category === 'backlog' && !t.completed);
+      const minOrder = backlogTodos.length > 0 ? Math.min(...backlogTodos.map(t => t.order)) : 0;
       await push(todosRef, {
         text,
         completed: false,
         timestamp: Date.now(),
         order: minOrder - 1,
-        category: 'today',
+        category: 'backlog',
       });
     } catch (error) {
       console.error('Error adding todo:', error);

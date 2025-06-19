@@ -43,18 +43,44 @@ const TodoSection: React.FC<TodoSectionProps> = ({
             {todos.length === 0 ? (
               <Box sx={{ 
                 textAlign: 'center', 
-                py: 2,
+                py: 3,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: 60,
+                height: category === 'today' ? 80 : 60,
+                backgroundColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.50' : 'transparent',
+                borderRadius: 2,
+                border: category === 'today' && !snapshot.isDraggingOver ? '2px dashed' : 'none',
+                borderColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.300' : 'transparent',
               }}>
-                <Typography color="text.secondary">
-                  {snapshot.isDraggingOver 
-                    ? `Drop here for ${category}` 
-                    : `No tasks in ${category === 'today' ? 'today' : 'the backlog'}.`
-                  }
-                </Typography>
+                {category === 'today' ? (
+                  <>
+                    <Typography 
+                      variant="body2" 
+                      color={snapshot.isDraggingOver ? "primary.main" : "text.secondary"}
+                      fontWeight={snapshot.isDraggingOver ? 600 : 400}
+                      sx={{ mb: 0.5 }}
+                    >
+                      {snapshot.isDraggingOver 
+                        ? "Drop here to work on today!" 
+                        : "🎯 Drop a task from backlog to work on today"
+                      }
+                    </Typography>
+                    {!snapshot.isDraggingOver && (
+                      <Typography variant="caption" color="text.disabled">
+                        Drag tasks here to prioritize them for today
+                      </Typography>
+                    )}
+                  </>
+                ) : (
+                  <Typography color="text.secondary">
+                    {snapshot.isDraggingOver 
+                      ? `Drop here for ${category}` 
+                      : "No tasks in the backlog."
+                    }
+                  </Typography>
+                )}
               </Box>
             ) : (
               <List>

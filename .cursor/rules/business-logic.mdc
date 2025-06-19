@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Business Logic Memory Bank
+
+## Data Model
+- **Todo**: `{id, text, completed, timestamp, order, description?, category}`
+- **Categories**: `'today' | 'backlog'`
+- **User Data**: Firebase path `users/${uid}/todos/`
+
+## Core Rules
+- New todos → backlog category, `order = minBacklogOrder - 1`
+- Completed todos → move to bottom with `order = minCompletedOrder - 1`  
+- Uncompleted todos → move to today category with `order = minTodayOrder - 1`
+- Sorting: Primary by `order` ASC, secondary by `timestamp` DESC
+
+## State Management
+- Firebase Realtime Database for persistence
+- React state with real-time sync via `onValue()`
+- User authentication via Firebase Auth
+
+## Key Operations
+- **Add**: Push to backlog with next lowest order
+- **Toggle**: Update completed status + reorder + category logic
+- **Drag**: Update category + calculate new order based on position
+- **Edit**: Update text/description in-place
+- **Delete**: Remove from Firebase + close any open drawers
+
+## UI Flow
+- Today section → active tasks for current day
+- Backlog section → future/queued tasks
+- Completed section → finished tasks (collapsed)
+- Drawer → detailed view/edit for selected todo
