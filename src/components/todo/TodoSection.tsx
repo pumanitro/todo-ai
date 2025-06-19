@@ -20,8 +20,8 @@ const TodoSection: React.FC<TodoSectionProps> = ({
   onTodoClick 
 }) => {
   return (
-    <>
-      <Typography variant="h6" gutterBottom>
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="h6" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
         {title} ({todos.length})
       </Typography>
 
@@ -31,26 +31,26 @@ const TodoSection: React.FC<TodoSectionProps> = ({
             {...provided.droppableProps}
             ref={provided.innerRef}
             sx={{
-              mb: 3,
               minHeight: todos.length === 0 ? 60 : 'auto',
               backgroundColor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
               border: snapshot.isDraggingOver ? '2px dashed' : '2px solid transparent',
               borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
               borderRadius: 1,
               transition: 'all 0.2s ease',
+              p: snapshot.isDraggingOver ? 1 : 0,
             }}
           >
             {todos.length === 0 ? (
               <Box sx={{ 
                 textAlign: 'center', 
-                py: 3,
+                py: 2,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: category === 'today' ? 80 : 60,
+                height: category === 'today' ? 60 : 50,
                 backgroundColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.50' : 'transparent',
-                borderRadius: 2,
+                borderRadius: 1,
                 border: category === 'today' && !snapshot.isDraggingOver ? '2px dashed' : 'none',
                 borderColor: category === 'today' && !snapshot.isDraggingOver ? 'grey.300' : 'transparent',
               }}>
@@ -60,7 +60,7 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                       variant="body2" 
                       color={snapshot.isDraggingOver ? "primary.main" : "text.secondary"}
                       fontWeight={snapshot.isDraggingOver ? 600 : 400}
-                      sx={{ mb: 0.5 }}
+                      sx={{ fontSize: '0.9rem' }}
                     >
                       {snapshot.isDraggingOver 
                         ? "Drop here to work on today!" 
@@ -68,13 +68,13 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                       }
                     </Typography>
                     {!snapshot.isDraggingOver && (
-                      <Typography variant="caption" color="text.disabled">
+                      <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
                         Drag tasks here to prioritize them for today
                       </Typography>
                     )}
                   </>
                 ) : (
-                  <Typography color="text.secondary">
+                  <Typography color="text.secondary" variant="body2" sx={{ fontSize: '0.9rem' }}>
                     {snapshot.isDraggingOver 
                       ? `Drop here for ${category}` 
                       : "No tasks in the backlog."
@@ -83,7 +83,7 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                 )}
               </Box>
             ) : (
-              <List>
+              <Box sx={{ '& > *': { mb: 0.5 } }}>
                 {todos.map((todo, index) => (
                   <TodoItem
                     key={todo.id}
@@ -93,13 +93,13 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                     onClick={onTodoClick}
                   />
                 ))}
-              </List>
+              </Box>
             )}
             {provided.placeholder}
           </Box>
         )}
       </Droppable>
-    </>
+    </Box>
   );
 };
 

@@ -33,3 +33,9 @@ alwaysApply: true
 - Backlog section → future/queued tasks
 - Completed section → finished tasks (collapsed)
 - Drawer → detailed view/edit for selected todo
+
+## UI Design Pattern
+- **Compact Layout**: Reduced spacing, small components (py: 0.5, mb: 1-2)
+- **Todo Items**: Bordered boxes with "Drag to reorder" text below each item
+- **Typography**: body2 for items, small icons, reduced font sizes
+- **Flexbox Positioning**: Use justify-content/align-items instead of absolute positioning

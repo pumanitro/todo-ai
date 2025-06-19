@@ -184,11 +184,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const completedTodos = todos.filter(todo => todo.completed);
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 2 }}>
       <UserHeader user={user} isConnected={isConnected} />
 
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <AddTodoForm onAddTodo={addTodo} />
 
           <DragDropContext onDragEnd={handleDragEnd}>

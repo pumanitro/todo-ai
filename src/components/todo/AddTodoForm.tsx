@@ -24,10 +24,10 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
 
   return (
     <>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
         Add New Task
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
         <TextField
           fullWidth
           label="What needs to be done?"
@@ -36,13 +36,15 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
           onChange={(e) => setNewTodo(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Enter a new task..."
+          size="small"
         />
         <Button
           variant="contained"
           onClick={handleSubmit}
           disabled={!newTodo.trim()}
           startIcon={<Add />}
-          sx={{ minWidth: 120 }}
+          sx={{ minWidth: 100, whiteSpace: 'nowrap' }}
+          size="small"
         >
           Add Task
         </Button>

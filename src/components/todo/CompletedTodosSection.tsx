@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, IconButton, Collapse, List } from '@mui/material';
+import { Box, Typography, IconButton, Collapse } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import { Todo } from '../../types/todo';
 import TodoItem from './TodoItem';
@@ -22,13 +22,13 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
   }
 
   return (
-    <Box sx={{ mt: 4 }}>
+    <Box sx={{ mt: 2 }}>
       <Box 
         sx={{ 
           display: 'flex', 
           alignItems: 'center', 
           cursor: 'pointer',
-          py: 1,
+          py: 0.5,
           '&:hover': {
             backgroundColor: 'action.hover',
           },
@@ -36,7 +36,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
         }}
         onClick={() => setShowCompleted(!showCompleted)}
       >
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
           Completed Tasks ({completedTodos.length})
         </Typography>
         <IconButton size="small">
@@ -45,7 +45,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
       </Box>
       
       <Collapse in={showCompleted}>
-        <List>
+        <Box sx={{ mt: 1, '& > *': { mb: 0.5 } }}>
           {completedTodos.map((todo, index) => (
             <TodoItem
               key={todo.id}
@@ -56,7 +56,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
               isDraggable={false}
             />
           ))}
-        </List>
+        </Box>
       </Collapse>
     </Box>
   );

@@ -109,6 +109,9 @@ src/
 - Update Firebase security rules for production
 - The current setup is for development purposes
 
+## User prompt for cursor:
+Everytime you add new functionality update business-logic.mdc file that is in /.cursor/rules. Keep it small, condence, only with essential knowledge.
+
 ## 📚 Learn More
 
 - [React Documentation](https://reactjs.org/)
