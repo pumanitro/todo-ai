@@ -9,7 +9,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton,
   Checkbox,
   Chip,
   Container,
@@ -18,7 +17,8 @@ import {
   Drawer,
   Divider,
 } from '@mui/material';
-import { Add, Delete, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
+import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator } from '@mui/icons-material';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { database } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
 
@@ -27,6 +27,7 @@ interface Todo {
   text: string;
   completed: boolean;
   timestamp: number;
+  order: number;
 }
 
 type FilterType = 'all' | 'active' | 'completed';
@@ -50,10 +51,16 @@ const TodoList: React.FC = () => {
           text: value.text,
           completed: value.completed || false,
           timestamp: value.timestamp,
+          order: value.order || 0,
         }));
         
-        // Sort by timestamp (newest first)
-        todoList.sort((a, b) => b.timestamp - a.timestamp);
+        // Sort by order (lowest first), then by timestamp (newest first) for items without order
+        todoList.sort((a, b) => {
+          if (a.order === b.order) {
+            return b.timestamp - a.timestamp;
+          }
+          return a.order - b.order;
+        });
         setTodos(todoList);
         setIsConnected(true);
       } else {
@@ -73,10 +80,13 @@ const TodoList: React.FC = () => {
 
     try {
       const todosRef = ref(database, 'todos');
+      // Get the highest order number and add 1 for the new todo
+      const maxOrder = todos.length > 0 ? Math.max(...todos.map(t => t.order)) : -1;
       await push(todosRef, {
         text: newTodo.trim(),
         completed: false,
         timestamp: Date.now(),
+        order: maxOrder + 1,
       });
       setNewTodo('');
     } catch (error) {
@@ -117,6 +127,33 @@ const TodoList: React.FC = () => {
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       addTodo();
+    }
+  };
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    try {
+      // Create a new array with the reordered items
+      const reorderedTodos = Array.from(filteredTodos);
+      const [reorderedItem] = reorderedTodos.splice(sourceIndex, 1);
+      reorderedTodos.splice(destinationIndex, 0, reorderedItem);
+
+      // Update the order values for all affected todos
+      const updates: { [key: string]: any } = {};
+      reorderedTodos.forEach((todo, index) => {
+        updates[`todos/${todo.id}/order`] = index;
+      });
+
+      // Update the database with the new order
+      await update(ref(database), updates);
+    } catch (error) {
+      console.error('Error reordering todos:', error);
     }
   };
 
@@ -186,42 +223,80 @@ const TodoList: React.FC = () => {
               </Typography>
             </Box>
           ) : (
-            <List>
-              {filteredTodos.map((todo) => (
-                <ListItem 
-                  key={todo.id} 
-                  divider 
-                  button
-                  onClick={() => handleTodoClick(todo)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <Box 
-                    onClick={(e) => e.stopPropagation()}
-                    sx={{ display: 'flex', alignItems: 'center' }}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="todos">
+                {(provided) => (
+                  <List
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
                   >
-                    <Checkbox
-                      checked={todo.completed}
-                      onChange={() => toggleTodo(todo.id, todo.completed)}
-                      icon={<RadioButtonUnchecked />}
-                      checkedIcon={<CheckCircle />}
-                      color="primary"
-                    />
-                  </Box>
-                  <ListItemText
-                    primary={
-                      <Typography 
-                        sx={{ 
-                          textDecoration: todo.completed ? 'line-through' : 'none',
-                          opacity: todo.completed ? 0.6 : 1,
-                        }}
+                    {filteredTodos.map((todo, index) => (
+                      <Draggable 
+                        key={todo.id} 
+                        draggableId={todo.id} 
+                        index={index}
                       >
-                        {todo.text}
-                      </Typography>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
+                        {(provided, snapshot) => (
+                          <ListItem 
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            divider 
+                            button
+                            onClick={() => handleTodoClick(todo)}
+                            sx={{ 
+                              cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                              backgroundColor: snapshot.isDragging ? 'action.hover' : 'transparent',
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                              },
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <Box 
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ display: 'flex', alignItems: 'center' }}
+                            >
+                              <Checkbox
+                                checked={todo.completed}
+                                onChange={() => toggleTodo(todo.id, todo.completed)}
+                                icon={<RadioButtonUnchecked />}
+                                checkedIcon={<CheckCircle />}
+                                color="primary"
+                              />
+                            </Box>
+                            <ListItemText
+                              primary={
+                                <Typography 
+                                  sx={{ 
+                                    textDecoration: todo.completed ? 'line-through' : 'none',
+                                    opacity: todo.completed ? 0.6 : 1,
+                                  }}
+                                >
+                                  {todo.text}
+                                </Typography>
+                              }
+                            />
+                            <Box 
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                ml: 1,
+                                color: 'text.disabled',
+                              }}
+                            >
+                              <DragIndicator />
+                            </Box>
+                          </ListItem>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </List>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </CardContent>
       </Card>
