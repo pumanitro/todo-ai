@@ -85,13 +85,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
     try {
       const todosRef = ref(database, `users/${user.uid}/todos`);
-      // Get the highest order number and add 1 for the new todo
-      const maxOrder = todos.length > 0 ? Math.max(...todos.map(t => t.order)) : -1;
+      // Get the lowest order number and subtract 1 to put new todo at the top
+      const minOrder = todos.length > 0 ? Math.min(...todos.map(t => t.order)) : 0;
       await push(todosRef, {
         text: newTodo.trim(),
         completed: false,
         timestamp: Date.now(),
-        order: maxOrder + 1,
+        order: minOrder - 1,
       });
       setNewTodo('');
     } catch (error) {
@@ -123,7 +123,26 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const toggleTodo = async (todoId: string, completed: boolean) => {
     try {
       const todoRef = ref(database, `users/${user.uid}/todos/${todoId}`);
-      await update(todoRef, { completed: !completed });
+      const newCompletedStatus = !completed;
+      
+      // Calculate new order to put the task at the top of its new list
+      let newOrder;
+      if (newCompletedStatus) {
+        // Task is being completed - put at top of completed list
+        const completedTodos = todos.filter(todo => todo.completed);
+        const minCompletedOrder = completedTodos.length > 0 ? Math.min(...completedTodos.map(t => t.order)) : 0;
+        newOrder = minCompletedOrder - 1;
+      } else {
+        // Task is being uncompleted - put at top of active list
+        const activeTodos = todos.filter(todo => !todo.completed);
+        const minActiveOrder = activeTodos.length > 0 ? Math.min(...activeTodos.map(t => t.order)) : 0;
+        newOrder = minActiveOrder - 1;
+      }
+      
+      await update(todoRef, { 
+        completed: newCompletedStatus,
+        order: newOrder
+      });
     } catch (error) {
       console.error('Error updating todo:', error);
     }
