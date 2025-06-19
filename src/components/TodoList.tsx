@@ -18,7 +18,7 @@ import {
   IconButton,
   Avatar,
 } from '@mui/material';
-import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator, ExpandMore, ExpandLess, Logout } from '@mui/icons-material';
+import { Add, Delete, CheckCircle, RadioButtonUnchecked, DragIndicator, ExpandMore, ExpandLess, Logout, Description } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { database, auth } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
@@ -30,6 +30,7 @@ interface Todo {
   completed: boolean;
   timestamp: number;
   order: number;
+  description?: string;
 }
 
 interface TodoListProps {
@@ -43,6 +44,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
+  const [editedName, setEditedName] = useState<string>('');
+  const [editedDescription, setEditedDescription] = useState<string>('');
 
   useEffect(() => {
     // Use user-specific path
@@ -57,6 +60,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           completed: value.completed || false,
           timestamp: value.timestamp,
           order: value.order || 0,
+          description: value.description || '',
         }));
         
         // Sort by order (lowest first), then by timestamp (newest first) for items without order
@@ -112,12 +116,29 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
   const handleTodoClick = (todo: Todo) => {
     setSelectedTodo(todo);
+    setEditedName(todo.text);
+    setEditedDescription(todo.description || '');
     setIsDrawerOpen(true);
   };
 
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedTodo(null);
+    setEditedName('');
+    setEditedDescription('');
+  };
+
+  const handleSaveEdit = async (field: 'text' | 'description', value: string) => {
+    if (!selectedTodo) return;
+
+    try {
+      const todoRef = ref(database, `users/${user.uid}/todos/${selectedTodo.id}`);
+      await update(todoRef, {
+        [field]: value.trim(),
+      });
+    } catch (error) {
+      console.error('Error updating todo:', error);
+    }
   };
 
   const toggleTodo = async (todoId: string, completed: boolean) => {
@@ -310,8 +331,12 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                                 alignItems: 'center',
                                 ml: 1,
                                 color: 'text.disabled',
+                                gap: 0.5,
                               }}
                             >
+                              {todo.description && (
+                                <Description fontSize="small" />
+                              )}
                               <DragIndicator />
                             </Box>
                           </ListItem>
@@ -388,6 +413,19 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                           </Typography>
                         }
                       />
+                      {todo.description && (
+                        <Box 
+                          sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            ml: 1,
+                            color: 'text.disabled',
+                            opacity: 0.6,
+                          }}
+                        >
+                          <Description fontSize="small" />
+                        </Box>
+                      )}
                     </ListItem>
                   ))}
                 </List>
@@ -415,11 +453,31 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             </Typography>
             <Divider sx={{ mb: 2 }} />
             
-            <Typography variant="body1" sx={{ mb: 2, wordBreak: 'break-word' }}>
-              {selectedTodo.text}
-            </Typography>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Task Name"
+                variant="outlined"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onBlur={() => handleSaveEdit('text', editedName)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                variant="outlined"
+                multiline
+                rows={4}
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                onBlur={() => handleSaveEdit('description', editedDescription)}
+                placeholder="Add a description for this task..."
+                sx={{ mb: 2 }}
+              />
+            </Box>
             
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Added: {new Date(selectedTodo.timestamp).toLocaleString()}
             </Typography>
             
