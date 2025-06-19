@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListItem, ListItemText, Checkbox, Box, Typography, Chip } from '@mui/material';
+import { ListItem, Checkbox, Box, Typography, Chip } from '@mui/material';
 import { CheckCircle, RadioButtonUnchecked, DragIndicator, Description, Event } from '@mui/icons-material';
 import { Draggable } from '@hello-pangea/dnd';
 import { Todo } from '../../types/todo';
