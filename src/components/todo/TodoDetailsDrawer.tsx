@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Drawer, Box, Typography, Divider, TextField, Button } from '@mui/material';
+import { Drawer, Box, Typography, Divider, TextField, Button, Select, MenuItem, FormControl, InputLabel, ListSubheader } from '@mui/material';
 import { Delete } from '@mui/icons-material';
 import { Todo } from '../../types/todo';
 
 interface TodoDetailsDrawerProps {
   isOpen: boolean;
   todo: Todo | null;
+  todos: Todo[]; // Add todos list for dropdown
   onClose: () => void;
-  onSaveEdit: (field: 'text' | 'description' | 'dueDate', value: string) => void;
+  onSaveEdit: (field: 'text' | 'description' | 'dueDate' | 'blockedBy', value: string) => void;
   onDelete: (todoId: string) => void;
 }
 
 const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({ 
   isOpen, 
   todo, 
+  todos,
   onClose, 
   onSaveEdit, 
   onDelete 
@@ -21,12 +23,14 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
   const [editedName, setEditedName] = useState<string>('');
   const [editedDescription, setEditedDescription] = useState<string>('');
   const [editedDueDate, setEditedDueDate] = useState<string>('');
+  const [editedBlockedBy, setEditedBlockedBy] = useState<string>('');
 
   useEffect(() => {
     if (todo) {
       setEditedName(todo.text);
       setEditedDescription(todo.description || '');
       setEditedDueDate(todo.dueDate || '');
+      setEditedBlockedBy(todo.blockedBy || '');
     }
   }, [todo]);
 
@@ -35,6 +39,41 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
     setEditedName('');
     setEditedDescription('');
     setEditedDueDate('');
+    setEditedBlockedBy('');
+  };
+
+  // Get available tasks for blocking grouped by category
+  const getAvailableBlockingTasks = () => {
+    if (!todo) return { today: [], backlog: [] };
+    
+    // Filter available tasks (exclude current task, completed tasks, nested tasks, and circular dependencies)
+    const availableTasks = todos.filter(t => 
+      t.id !== todo.id && // Can't block itself
+      !t.completed && // Can't be blocked by completed tasks
+      !t.blockedBy && // Don't include nested/blocked tasks
+      t.blockedBy !== todo.id // Prevent circular dependencies
+    );
+
+    // Group by category and sort within each group
+    const todayTasks = availableTasks
+      .filter(t => t.category === 'today')
+      .sort((a, b) => {
+        if (a.order === b.order) {
+          return b.timestamp - a.timestamp;
+        }
+        return a.order - b.order;
+      });
+
+    const backlogTasks = availableTasks
+      .filter(t => t.category === 'backlog')
+      .sort((a, b) => {
+        if (a.order === b.order) {
+          return b.timestamp - a.timestamp;
+        }
+        return a.order - b.order;
+      });
+
+    return { today: todayTasks, backlog: backlogTasks };
   };
 
   const formatDueDate = (dueDate: string) => {
@@ -53,6 +92,12 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
     } else {
       return `Due in ${diffDays} day(s)`;
     }
+  };
+
+  const getBlockingTaskText = () => {
+    if (!editedBlockedBy) return 'None';
+    const blockingTask = todos.find(t => t.id === editedBlockedBy);
+    return blockingTask ? blockingTask.text : 'None';
   };
 
   return (
@@ -109,6 +154,60 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
               }}
               sx={{ mb: 2 }}
             />
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Blocked By</InputLabel>
+              <Select
+                value={editedBlockedBy}
+                label="Blocked By"
+                onChange={(e) => {
+                  setEditedBlockedBy(e.target.value);
+                  onSaveEdit('blockedBy', e.target.value);
+                }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                
+                {(() => {
+                  const groupedTasks = getAvailableBlockingTasks();
+                  const items = [];
+                  
+                  // Today section
+                  if (groupedTasks.today.length > 0) {
+                    items.push(
+                      <ListSubheader key="today-header" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        TODAY
+                      </ListSubheader>
+                    );
+                    groupedTasks.today.forEach((task) => {
+                      items.push(
+                        <MenuItem key={task.id} value={task.id} sx={{ pl: 3 }}>
+                          {task.text}
+                        </MenuItem>
+                      );
+                    });
+                  }
+                  
+                  // Backlog section
+                  if (groupedTasks.backlog.length > 0) {
+                    items.push(
+                      <ListSubheader key="backlog-header" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                        BACKLOG
+                      </ListSubheader>
+                    );
+                    groupedTasks.backlog.forEach((task) => {
+                      items.push(
+                        <MenuItem key={task.id} value={task.id} sx={{ pl: 3 }}>
+                          {task.text}
+                        </MenuItem>
+                      );
+                    });
+                  }
+                  
+                  return items;
+                })()}
+              </Select>
+            </FormControl>
           </Box>
           
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -119,8 +218,12 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
             Status: {todo.completed ? 'Completed' : 'Active'}
           </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Due: {formatDueDate(todo.dueDate || '')}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Blocked By: {getBlockingTaskText()}
           </Typography>
 
           <Button

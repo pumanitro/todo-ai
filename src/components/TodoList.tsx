@@ -8,7 +8,8 @@ import { User } from 'firebase/auth';
 import { Todo } from '../types/todo';
 import UserHeader from './todo/UserHeader';
 import AddTodoForm from './todo/AddTodoForm';
-import TodoSection from './todo/TodoSection';
+
+import NestedTodoSection from './todo/NestedTodoSection';
 import CompletedTodosSection from './todo/CompletedTodosSection';
 import TodoDetailsDrawer from './todo/TodoDetailsDrawer';
 import TodoItem from './todo/TodoItem';
@@ -24,6 +25,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isPostponedExpanded, setIsPostponedExpanded] = useState<boolean>(false);
   const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
+  const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
 
   const transformFirebaseDataToTodos = (data: any): Todo[] => {
     if (!data) return [];
@@ -37,6 +39,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       description: value.description || '',
       category: value.category || 'today',
       dueDate: value.dueDate || undefined,
+      blockedBy: value.blockedBy || undefined,
     }));
     
     // Sort by order (primary) and timestamp (secondary)
@@ -79,6 +82,31 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       ? `1 task was moved from Postponed to Today because it's due today`
       : `${tasksCount} tasks were moved from Postponed to Today because they're due today`;
     setMovedTasksNotification(message);
+  };
+
+  const showBlockedTasksMovedNotification = (tasksCount: number, parentTaskName: string) => {
+    const message = tasksCount === 1 
+      ? `1 blocked task moved to Backlog after "${parentTaskName}" was completed`
+      : `${tasksCount} blocked tasks moved to Backlog after "${parentTaskName}" was completed`;
+    setMovedTasksNotification(message);
+  };
+
+  const animateTaskTransition = async (taskIds: string[]) => {
+    // Add tasks to animation set
+    setAnimatingTaskIds(prev => {
+      const newSet = new Set(prev);
+      taskIds.forEach(id => newSet.add(id));
+      return newSet;
+    });
+
+    // Remove from animation set after animation completes
+    setTimeout(() => {
+      setAnimatingTaskIds(prev => {
+        const newSet = new Set(prev);
+        taskIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    }, 1000); // Animation duration
   };
 
   const handleFirebaseDataUpdate = async (snapshot: any) => {
@@ -154,6 +182,19 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
   const deleteTodo = async (todoId: string) => {
     try {
+      // Find any tasks that are blocked by the task being deleted
+      const blockedChildren = todos.filter(todo => todo.blockedBy === todoId);
+      
+      // Clear blockedBy references for any children
+      if (blockedChildren.length > 0) {
+        const clearBlockedPromises = blockedChildren.map(async (child) => {
+          const childRef = ref(database, `users/${user.uid}/todos/${child.id}`);
+          await update(childRef, { blockedBy: null });
+        });
+        await Promise.all(clearBlockedPromises);
+      }
+
+      // Delete the main todo
       const todoRef = ref(database, `users/${user.uid}/todos/${todoId}`);
       await remove(todoRef);
       setIsDrawerOpen(false);
@@ -173,7 +214,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     setSelectedTodo(null);
   };
 
-  const handleSaveEdit = async (field: 'text' | 'description' | 'dueDate', value: string) => {
+  const handleSaveEdit = async (field: 'text' | 'description' | 'dueDate' | 'blockedBy', value: string) => {
     if (!selectedTodo) return;
 
     try {
@@ -202,6 +243,26 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           updates.dueDate = null;
         }
       }
+
+      // Handle blockedBy field
+      if (field === 'blockedBy') {
+        if (!value.trim()) {
+          updates.blockedBy = null;
+        } else {
+          // When a task becomes blocked, it should inherit the parent's category
+          const parentTask = todos.find(t => t.id === value.trim());
+          if (parentTask) {
+            updates.category = parentTask.category;
+            // Also update order to be near the parent
+            const parentCategoryTodos = todos.filter(t => 
+              t.category === parentTask.category && !t.completed && t.id !== selectedTodo.id
+            );
+            const minOrder = parentCategoryTodos.length > 0 ? 
+              Math.min(...parentCategoryTodos.map(t => t.order)) : 0;
+            updates.order = minOrder - 1;
+          }
+        }
+      }
       
       await update(todoRef, updates);
     } catch (error) {
@@ -216,6 +277,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       const currentTodo = todos.find(todo => todo.id === todoId);
       if (!currentTodo) return;
       
+      // Find blocked children before completing the parent
+      const blockedChildren = todos.filter(todo => todo.blockedBy === todoId && !todo.completed);
+      
       let newOrder;
       let newCategory: 'today' | 'backlog' | 'postponed';
       
@@ -225,6 +289,31 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         const minCompletedOrder = completedTodos.length > 0 ? Math.min(...completedTodos.map(t => t.order)) : 0;
         newOrder = minCompletedOrder - 1;
         newCategory = currentTodo.category; // Keep current category
+
+        // Handle blocked children when parent is completed
+        if (blockedChildren.length > 0) {
+          // Start animation for blocked children
+          await animateTaskTransition(blockedChildren.map(child => child.id));
+          
+          // Move blocked children to backlog
+          const backlogTodos = todos.filter(t => !t.completed && t.category === 'backlog');
+          const minBacklogOrder = backlogTodos.length > 0 ? Math.min(...backlogTodos.map(t => t.order)) : 0;
+          
+          // Update all blocked children to move to backlog and clear blockedBy
+          const childUpdatePromises = blockedChildren.map(async (child, index) => {
+            const childRef = ref(database, `users/${user.uid}/todos/${child.id}`);
+            await update(childRef, {
+              category: 'backlog',
+              order: minBacklogOrder - 1 - index,
+              blockedBy: null // Clear the blocking relationship
+            });
+          });
+
+          await Promise.all(childUpdatePromises);
+          
+          // Show notification about moved tasks
+          showBlockedTasksMovedNotification(blockedChildren.length, currentTodo.text);
+        }
       } else {
         // Uncompleting a task - recategorize based on due date
         newCategory = categorizeTodoByDueDate(currentTodo.dueDate);
@@ -243,6 +332,98 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }
   };
 
+  const formatDateGroupTitle = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    const dateString = date.toDateString();
+    const todayString = today.toDateString();
+    const tomorrowString = tomorrow.toDateString();
+    
+    if (dateString === todayString) {
+      return 'Today';
+    } else if (dateString === tomorrowString) {
+      return 'Tomorrow';
+    } else {
+      // Show date in DD.MM.YYYY format
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    }
+  };
+
+  // Helper function to render nested tasks in postponed section
+  const renderNestedTasks = (todosList: Todo[]) => {
+    const parentTasks = todosList.filter(t => !t.blockedBy);
+    const blockedTasks = todosList.filter(t => t.blockedBy);
+    
+    const renderTaskWithChildren = (todo: Todo, index: number) => {
+      const children = blockedTasks.filter(child => child.blockedBy === todo.id);
+      
+      return (
+        <Box key={todo.id} sx={{ mb: 0.5 }}>
+          <TodoItem
+            todo={todo}
+            index={index}
+            onToggle={toggleTodo}
+            onClick={handleTodoClick}
+            isDraggable={false}
+            hideDueDate={true}
+            isAnimating={animatingTaskIds.has(todo.id)}
+          />
+          
+          {children.length > 0 && (
+            <Box sx={{ ml: 3, mt: 0.5, position: 'relative' }}>
+              <Box 
+                sx={{ 
+                  position: 'absolute',
+                  left: -12,
+                  top: 0,
+                  bottom: 0,
+                  width: 2,
+                  backgroundColor: 'divider',
+                  opacity: 0.5
+                }} 
+              />
+              
+              {children.map((child, childIndex) => (
+                <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
+                  <Box 
+                    sx={{ 
+                      position: 'absolute',
+                      left: -12,
+                      top: '50%',
+                      width: 12,
+                      height: 2,
+                      backgroundColor: 'divider',
+                      opacity: 0.5,
+                      transform: 'translateY(-50%)'
+                    }} 
+                  />
+                  
+                  <TodoItem
+                    todo={child}
+                    index={childIndex}
+                    onToggle={toggleTodo}
+                    onClick={handleTodoClick}
+                    isDraggable={false}
+                    hideDueDate={true}
+                    isAnimating={animatingTaskIds.has(child.id)}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      );
+    };
+
+    return parentTasks.map((todo, index) => renderTaskWithChildren(todo, index));
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
@@ -258,13 +439,27 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       const draggedTodo = todos.find(todo => todo.id === draggedTodoId);
       if (!draggedTodo) return;
 
+      // Get all blocked children of the dragged task
+      const blockedChildren = todos.filter(todo => todo.blockedBy === draggedTodoId);
+
       const newCategory = destinationDroppableId as 'today' | 'backlog' | 'postponed';
       
-      const destinationTodos = todos.filter(todo => 
-        !todo.completed && todo.category === newCategory
+      // Get destination todos in the same order as they appear in the UI
+      // This must match exactly how NestedTodoSection displays them
+      const categoryTodos = todos.filter(todo => 
+        !todo.completed && todo.category === newCategory && !todo.blockedBy && todo.id !== draggedTodoId
       );
+      
+      // Sort them the same way as in NestedTodoSection (by order, then timestamp)
+      // This creates the unified list that matches allParentTasks in NestedTodoSection
+      const destinationTodos = categoryTodos.sort((a, b) => {
+        if (a.order === b.order) {
+          return b.timestamp - a.timestamp;
+        }
+        return a.order - b.order;
+      });
 
-      let newOrder;
+      let newOrder: number;
       if (destinationTodos.length === 0) {
         newOrder = 0;
       } else if (destinationIndex === 0) {
@@ -277,11 +472,25 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         newOrder = (prevOrder + nextOrder) / 2;
       }
 
+      // Update the parent task
       const todoRef = ref(database, `users/${user.uid}/todos/${draggedTodoId}`);
       await update(todoRef, {
         category: newCategory,
         order: newOrder
       });
+
+      // Update all blocked children to follow the parent
+      if (blockedChildren.length > 0) {
+        const childUpdatePromises = blockedChildren.map(async (child, index) => {
+          const childRef = ref(database, `users/${user.uid}/todos/${child.id}`);
+          await update(childRef, {
+            category: newCategory,
+            order: newOrder + 0.1 + (index * 0.01) // Ensure children have slightly higher order values
+          });
+        });
+
+        await Promise.all(childUpdatePromises);
+      }
 
     } catch (error) {
       console.error('Error reordering todos:', error);
@@ -329,29 +538,6 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }));
   };
 
-  const formatDateGroupTitle = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    
-    const dateString = date.toDateString();
-    const todayString = today.toDateString();
-    const tomorrowString = tomorrow.toDateString();
-    
-    if (dateString === todayString) {
-      return 'Today';
-    } else if (dateString === tomorrowString) {
-      return 'Tomorrow';
-    } else {
-      // Show date in DD.MM.YYYY format
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}.${month}.${year}`;
-    }
-  };
-
   const postponedGroups = groupPostponedTodosByDate();
 
   return (
@@ -362,12 +548,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <DragDropContext onDragEnd={handleDragEnd}>
-            <TodoSection
+            <NestedTodoSection
               category="today"
               todos={todayTodos}
               title="Today"
               onToggleTodo={toggleTodo}
               onTodoClick={handleTodoClick}
+              animatingTaskIds={animatingTaskIds}
             />
 
             {/* Backlog Section with Add Todo Form */}
@@ -378,12 +565,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               
               <AddTodoForm onAddTodo={addTodo} />
 
-              <TodoSection
+              <NestedTodoSection
                 category="backlog"
                 todos={backlogTodos}
                 title=""
                 onToggleTodo={toggleTodo}
                 onTodoClick={handleTodoClick}
+                animatingTaskIds={animatingTaskIds}
               />
             </Box>
           </DragDropContext>
@@ -419,29 +607,19 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               <Box sx={{ mt: 1, pl: 2 }}>
                 {postponedGroups.map((group, groupIndex) => (
                   <Box key={groupIndex} sx={{ mb: groupIndex < postponedGroups.length - 1 ? 2.5 : 0 }}>
-                                          <Typography 
-                        variant="subtitle1" 
-                        sx={{ 
-                          fontWeight: 600,
-                          color: 'text.primary',
-                          mb: 1,
-                          fontSize: '0.95rem'
-                        }}
-                      >
-                        {group.displayDate}
-                      </Typography>
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ 
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        mb: 1,
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      {group.displayDate}
+                    </Typography>
                     <Box sx={{ '& > *': { mb: 0.5 } }}>
-                      {group.todos.map((todo, todoIndex) => (
-                        <TodoItem
-                          key={todo.id}
-                          todo={todo}
-                          index={todoIndex}
-                          onToggle={toggleTodo}
-                          onClick={handleTodoClick}
-                          isDraggable={false}
-                          hideDueDate={true}
-                        />
-                      ))}
+                      {renderNestedTasks(group.todos)}
                     </Box>
                   </Box>
                 ))}
@@ -458,6 +636,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             completedTodos={completedTodos}
             onToggleTodo={toggleTodo}
             onTodoClick={handleTodoClick}
+            animatingTaskIds={animatingTaskIds}
           />
         </Box>
       )}
@@ -465,6 +644,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       <TodoDetailsDrawer
         isOpen={isDrawerOpen}
         todo={selectedTodo}
+        todos={todos}
         onClose={handleCloseDrawer}
         onSaveEdit={handleSaveEdit}
         onDelete={deleteTodo}

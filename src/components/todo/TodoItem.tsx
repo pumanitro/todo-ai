@@ -11,9 +11,11 @@ interface TodoItemProps {
   onClick: (todo: Todo) => void;
   isDraggable?: boolean;
   hideDueDate?: boolean;
+  isAnimating?: boolean;
+  blockedChildren?: Todo[];
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false }) => {
+const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false, isAnimating = false, blockedChildren = [] }) => {
   const getDueDateDisplay = (dueDate: string) => {
     const today = new Date().toISOString().split('T')[0];
     const due = new Date(dueDate);
@@ -50,9 +52,9 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         onClick={() => onClick(todo)}
         sx={{ 
           cursor: isDraggable ? (snapshot?.isDragging ? 'grabbing' : 'grab') : 'pointer',
-          backgroundColor: snapshot?.isDragging ? 'action.hover' : 'transparent',
+          backgroundColor: isAnimating ? 'primary.light' : (snapshot?.isDragging ? 'action.hover' : 'transparent'),
           '&:hover': {
-            backgroundColor: 'action.hover',
+            backgroundColor: isAnimating ? 'primary.light' : 'action.hover',
           },
           display: 'flex',
           alignItems: 'center',
@@ -60,9 +62,14 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           px: 1,
           minHeight: 'auto',
           border: '1px solid',
-          borderColor: 'divider',
+          borderColor: isAnimating ? 'primary.main' : 'divider',
+          borderWidth: isAnimating ? '2px' : '1px',
           borderRadius: 1,
           mb: 0,
+          // Animation styles when task is being moved
+          transform: isAnimating ? 'scale(1.02)' : 'scale(1)',
+          boxShadow: isAnimating ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none',
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <Box 
@@ -119,6 +126,71 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           {!todo.completed && isDraggable && <DragIndicator fontSize="small" />}
         </Box>
       </ListItem>
+      
+      {/* Show blocked children during drag preview */}
+      {snapshot?.isDragging && blockedChildren.length > 0 && (
+        <Box sx={{ 
+          mt: 0.5,
+          pl: 2,
+          borderLeft: '3px solid',
+          borderLeftColor: 'primary.main',
+          ml: 1
+        }}>
+          {blockedChildren.map((child, childIndex) => (
+            <Box 
+              key={child.id} 
+              sx={{ 
+                mb: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                py: 0.25,
+                px: 1,
+                backgroundColor: 'primary.light',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'primary.main',
+                opacity: 0.9
+              }}
+            >
+              <Box sx={{ 
+                width: 12, 
+                height: 12, 
+                borderRadius: '50%', 
+                backgroundColor: 'primary.main',
+                flexShrink: 0
+              }} />
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  fontSize: '0.75rem', 
+                  color: 'primary.dark',
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {child.text}
+              </Typography>
+            </Box>
+          ))}
+          
+          {/* Small indicator showing how many children will move */}
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              fontSize: '0.7rem', 
+              color: 'primary.main',
+              fontStyle: 'italic',
+              mt: 0.5,
+              display: 'block'
+            }}
+          >
+            + {blockedChildren.length} blocked task{blockedChildren.length > 1 ? 's' : ''} will move
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 

@@ -10,6 +10,7 @@ interface TodoSectionProps {
   title: string;
   onToggleTodo: (todoId: string, completed: boolean) => void;
   onTodoClick: (todo: Todo) => void;
+  animatingTaskIds?: Set<string>;
 }
 
 const TodoSection: React.FC<TodoSectionProps> = ({ 
@@ -17,7 +18,8 @@ const TodoSection: React.FC<TodoSectionProps> = ({
   todos, 
   title, 
   onToggleTodo, 
-  onTodoClick 
+  onTodoClick,
+  animatingTaskIds = new Set() 
 }) => {
   const getEmptyStateMessage = () => {
     switch (category) {
@@ -113,6 +115,7 @@ const TodoSection: React.FC<TodoSectionProps> = ({
                     index={index}
                     onToggle={onToggleTodo}
                     onClick={onTodoClick}
+                    isAnimating={animatingTaskIds.has(todo.id)}
                   />
                 ))}
               </Box>
