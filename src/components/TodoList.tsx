@@ -25,67 +25,91 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isPostponedExpanded, setIsPostponedExpanded] = useState<boolean>(false);
   const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
 
+  const transformFirebaseDataToTodos = (data: any): Todo[] => {
+    if (!data) return [];
+    
+    const todoList: Todo[] = Object.entries(data).map(([id, value]: [string, any]) => ({
+      id,
+      text: value.text,
+      completed: value.completed || false,
+      timestamp: value.timestamp,
+      order: value.order || 0,
+      description: value.description || '',
+      category: value.category || 'today',
+      dueDate: value.dueDate || undefined,
+    }));
+    
+    // Sort by order (primary) and timestamp (secondary)
+    return todoList.sort((a, b) => {
+      if (a.order === b.order) {
+        return b.timestamp - a.timestamp;
+      }
+      return a.order - b.order;
+    });
+  };
+
+  const findTasksToMoveToToday = (todoList: Todo[]): Todo[] => {
+    return todoList.filter(todo => 
+      !todo.completed && 
+      todo.category === 'postponed' && 
+      categorizeTodoByDueDate(todo.dueDate) === 'today'
+    );
+  };
+
+  const moveTasksToTodayCategory = async (tasksToMove: Todo[], todoList: Todo[]) => {
+    if (tasksToMove.length === 0) return;
+
+    const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
+    const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+
+    // Move tasks to today category
+    const updatePromises = tasksToMove.map(async (task, index) => {
+      const todoRef = ref(database, `users/${user.uid}/todos/${task.id}`);
+      await update(todoRef, {
+        category: 'today',
+        order: minTodayOrder - 1 - index
+      });
+    });
+
+    await Promise.all(updatePromises);
+  };
+
+  const showMovedTasksNotification = (tasksCount: number) => {
+    const message = tasksCount === 1 
+      ? `1 task was moved from Postponed to Today because it's due today`
+      : `${tasksCount} tasks were moved from Postponed to Today because they're due today`;
+    setMovedTasksNotification(message);
+  };
+
+  const handleFirebaseDataUpdate = async (snapshot: any) => {
+    const data = snapshot.val();
+    const todoList = transformFirebaseDataToTodos(data);
+    
+    // Handle auto-migration of postponed tasks that are now due today
+    const tasksToMove = findTasksToMoveToToday(todoList);
+    
+    if (tasksToMove.length > 0) {
+      await moveTasksToTodayCategory(tasksToMove, todoList);
+      showMovedTasksNotification(tasksToMove.length);
+    }
+
+    setTodos(todoList);
+    setIsConnected(true);
+  };
+
+  const handleFirebaseError = (error: any) => {
+    console.error('Firebase error:', error);
+    setIsConnected(false);
+  };
+
   useEffect(() => {
     const todosRef = ref(database, `users/${user.uid}/todos`);
     
-    const unsubscribe = onValue(todosRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const todoList: Todo[] = Object.entries(data).map(([id, value]: [string, any]) => ({
-          id,
-          text: value.text,
-          completed: value.completed || false,
-          timestamp: value.timestamp,
-          order: value.order || 0,
-          description: value.description || '',
-          category: value.category || 'today',
-          dueDate: value.dueDate || undefined,
-        }));
-        
-        todoList.sort((a, b) => {
-          if (a.order === b.order) {
-            return b.timestamp - a.timestamp;
-          }
-          return a.order - b.order;
-        });
-
-        // Check for postponed tasks that should be moved to today
-        const tasksToMove = todoList.filter(todo => 
-          !todo.completed && 
-          todo.category === 'postponed' && 
-          categorizeTodoByDueDate(todo.dueDate) === 'today'
-        );
-
-        if (tasksToMove.length > 0) {
-          // Move tasks to today category
-          const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
-          const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
-
-          tasksToMove.forEach(async (task, index) => {
-            const todoRef = ref(database, `users/${user.uid}/todos/${task.id}`);
-            await update(todoRef, {
-              category: 'today',
-              order: minTodayOrder - 1 - index
-            });
-          });
-
-          // Show notification
-          const message = tasksToMove.length === 1 
-            ? `1 task was moved from Postponed to Today because it's due today`
-            : `${tasksToMove.length} tasks were moved from Postponed to Today because they're due today`;
-          setMovedTasksNotification(message);
-        }
-
-        setTodos(todoList);
-        setIsConnected(true);
-      } else {
-        setTodos([]);
-        setIsConnected(true);
-      }
-    }, (error) => {
-      console.error('Firebase error:', error);
-      setIsConnected(false);
-    });
+    const unsubscribe = onValue(
+      todosRef, 
+      handleFirebaseDataUpdate,
+      handleFirebaseError
+    );
 
     return () => unsubscribe();
   }, [user.uid]);
