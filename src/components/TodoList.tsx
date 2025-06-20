@@ -361,29 +361,73 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }
   };
 
-  // Helper function to render nested tasks in postponed section
-  // This version prioritizes nesting over date grouping by looking for blocked children in entire todos list
-  const renderNestedTasksInPostponed = (parentTasksList: Todo[]) => {
+      // Helper function to render nested tasks in postponed section using the same logic as NestedTodoSection
+    const renderNestedTasksInPostponed = (parentTasksList: Todo[]) => {
+    // Organize tasks into hierarchical structure (same approach as NestedTodoSection)
+    const organizeHierarchy = () => {
+      const hierarchies: Array<{ parent: Todo; children: Todo[] }> = [];
+      const standalone: Todo[] = [];
+      
+      parentTasksList.forEach(parent => {
+        // Find children that are blocked by this parent (regardless of their category)
+        const children = todos.filter(child => 
+          child.blockedBy === parent.id && 
+          !child.completed
+        );
+        
+        if (children.length > 0) {
+          hierarchies.push({
+            parent,
+            children: children.sort((a, b) => {
+              if (a.order === b.order) {
+                return b.timestamp - a.timestamp;
+              }
+              return a.order - b.order;
+            })
+          });
+        } else {
+          standalone.push(parent);
+        }
+      });
+      
+      return { hierarchies, standalone };
+    };
+
+    const { hierarchies, standalone } = organizeHierarchy();
+    
+    // Create unified list and sort by order (same as NestedTodoSection)
+    const allParentTasks = [...standalone, ...hierarchies.map(h => h.parent)];
+    allParentTasks.sort((a, b) => {
+      if (a.order === b.order) {
+        return b.timestamp - a.timestamp;
+      }
+      return a.order - b.order;
+    });
+
     const renderTaskWithChildren = (todo: Todo, index: number) => {
-      // Find ALL blocked children of this parent from the entire todos list, regardless of category
-      const children = todos.filter(child => 
-        child.blockedBy === todo.id && !child.completed
-      );
+      // Find if this todo has children
+      const hierarchy = hierarchies.find(h => h.parent.id === todo.id);
+      const children = hierarchy ? hierarchy.children : undefined;
       
       return (
-        <Box key={todo.id} sx={{ mb: 0.5 }}>
-          <TodoItem
-            todo={todo}
-            index={index}
-            onToggle={toggleTodo}
-            onClick={handleTodoClick}
-            isDraggable={false}
-            hideDueDate={true}
-            isAnimating={animatingTaskIds.has(todo.id)}
-          />
+        <React.Fragment key={todo.id}>
+          {/* Parent Task */}
+          <Box sx={{ mb: 0.5 }}>
+            <TodoItem
+              todo={todo}
+              index={index}
+              onToggle={toggleTodo}
+              onClick={handleTodoClick}
+              isDraggable={false}
+              hideDueDate={true}
+              isAnimating={animatingTaskIds.has(todo.id)}
+            />
+          </Box>
           
-          {children.length > 0 && (
-            <Box sx={{ ml: 3, mt: 0.5, position: 'relative' }}>
+          {/* Nested Children */}
+          {children && children.length > 0 && (
+            <Box sx={{ ml: 3, mt: -0.5, mb: 0.5, position: 'relative' }}>
+              {/* Visual connector line */}
               <Box 
                 sx={{ 
                   position: 'absolute',
@@ -398,6 +442,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               
               {children.map((child, childIndex) => (
                 <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
+                  {/* Horizontal connector line */}
                   <Box 
                     sx={{ 
                       position: 'absolute',
@@ -424,11 +469,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               ))}
             </Box>
           )}
-        </Box>
+        </React.Fragment>
       );
     };
 
-    return parentTasksList.map((todo, index) => renderTaskWithChildren(todo, index));
+    return allParentTasks.map((todo, index) => renderTaskWithChildren(todo, index));
   };
 
   const handleDragStart = (result: any) => {
