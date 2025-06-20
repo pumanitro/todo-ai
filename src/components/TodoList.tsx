@@ -604,7 +604,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
               </IconButton>
               <Typography variant="overline" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
-                Postponed
+                Postponed ({postponedTodos.length})
               </Typography>
             </Box>
             
