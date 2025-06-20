@@ -64,7 +64,13 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
 
   return (
     <>
-      <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 1.5, 
+        mb: 2 
+      }}>
+        {/* Text Input - Full width on mobile, takes remaining space on desktop */}
         <TextField
           fullWidth
           label="What needs to be done?"
@@ -74,83 +80,97 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
           onKeyPress={handleKeyPress}
           placeholder="Enter a new task..."
           size="small"
+          sx={{ 
+            width: { xs: '100%', sm: 'auto' },
+            flex: { sm: 1 }
+          }}
         />
         
-        {/* Date Input or Icon Button */}
-        {showDateInput ? (
-          <TextField
-            ref={dateInputRef}
-            type="date"
-            variant="outlined"
-            value={dueDate}
-            onChange={(e) => {
-              setDueDate(e.target.value);
-              // If date is cleared, hide the input
-              if (!e.target.value) {
-                setShowDateInput(false);
-              }
-            }}
-            onBlur={handleDateInputBlur}
-            size="small"
+        {/* Buttons Container - Separate row on mobile */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 1.5,
+          justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+          width: { xs: '100%', sm: 'auto' }
+        }}>
+          {/* Date Input or Icon Button */}
+          {showDateInput ? (
+            <TextField
+              ref={dateInputRef}
+              type="date"
+              variant="outlined"
+              value={dueDate}
+              onChange={(e) => {
+                setDueDate(e.target.value);
+                // If date is cleared, hide the input
+                if (!e.target.value) {
+                  setShowDateInput(false);
+                }
+              }}
+              onBlur={handleDateInputBlur}
+              size="small"
+              sx={{ 
+                width: { xs: 'auto', sm: 220 },
+                '& .MuiInputBase-input': {
+                  cursor: 'pointer'
+                }
+              }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          ) : (
+            <IconButton
+              onClick={handleDateIconClick}
+              size="small"
+              sx={{ 
+                border: '1px solid',
+                borderColor: dueDate ? 'primary.main' : 'divider',
+                borderRadius: 1,
+                backgroundColor: dueDate ? 'primary.50' : 'transparent',
+                color: dueDate ? 'primary.main' : 'text.secondary',
+                minWidth: 40,
+                height: 40,
+                position: 'relative',
+                '&:hover': {
+                  backgroundColor: dueDate ? 'primary.100' : 'action.hover',
+                }
+              }}
+            >
+              <Event fontSize="small" />
+              {dueDate && (
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    position: 'absolute',
+                    bottom: -2,
+                    fontSize: '8px',
+                    lineHeight: 1,
+                    color: 'primary.main',
+                    fontWeight: 600
+                  }}
+                >
+                  {formatDateDisplay(dueDate)}
+                </Typography>
+              )}
+            </IconButton>
+          )}
+
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!newTodo.trim()}
+            startIcon={<Add />}
             sx={{ 
-              width: 220,
-              '& .MuiInputBase-input': {
-                cursor: 'pointer'
-              }
+              minWidth: { xs: 'auto', sm: 100 }, 
+              whiteSpace: 'nowrap',
+              flex: { xs: 1, sm: 'none' }
             }}
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-        ) : (
-          <IconButton
-            onClick={handleDateIconClick}
             size="small"
-            sx={{ 
-              border: '1px solid',
-              borderColor: dueDate ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              backgroundColor: dueDate ? 'primary.50' : 'transparent',
-              color: dueDate ? 'primary.main' : 'text.secondary',
-              minWidth: 40,
-              height: 40,
-              position: 'relative',
-              '&:hover': {
-                backgroundColor: dueDate ? 'primary.100' : 'action.hover',
-              }
-            }}
           >
-            <Event fontSize="small" />
-            {dueDate && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  position: 'absolute',
-                  bottom: -2,
-                  fontSize: '8px',
-                  lineHeight: 1,
-                  color: 'primary.main',
-                  fontWeight: 600
-                }}
-              >
-                {formatDateDisplay(dueDate)}
-              </Typography>
-            )}
-          </IconButton>
-        )}
-
-
-
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={!newTodo.trim()}
-          startIcon={<Add />}
-          sx={{ minWidth: 100, whiteSpace: 'nowrap' }}
-          size="small"
-        >
-          Add Task
-        </Button>
+            Add Task
+          </Button>
+        </Box>
       </Box>
     </>
   );
