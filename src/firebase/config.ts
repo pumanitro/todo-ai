@@ -4,7 +4,12 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth, Auth } from 'firebase/auth';
 
 // Your Firebase configuration
-// Replace these values with your actual Firebase project configuration
+
+// At first it can look like here should be .envs used and this is a security issue
+// NOPE - this it Backend as a Service architecture
+// So even I have .envs here it still is going to be exposed in bundle that bots are going to have in 1-7 days 
+// Simply saying this is good and intentional
+// if you disagree feel free to discuss it with me at pumanitro@gmail.com
 const firebaseConfig = {
     apiKey: "AIzaSyCpOWVlC6PVBEdLAsk90w8P24nv8A8cLCU",
     authDomain: "todo-ai-99c1f.firebaseapp.com",
