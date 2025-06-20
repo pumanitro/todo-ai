@@ -84,7 +84,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
             variant="body2"
             sx={todo.completed ? { 
               textDecoration: 'line-through',
-              opacity: 0.6,
             } : {}}
           >
             {todo.text}
@@ -100,7 +99,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
                 sx={{ 
                   height: '20px', 
                   fontSize: '0.7rem',
-                  opacity: todo.completed ? 0.6 : 1,
                 }}
               />
             </Box>
@@ -113,7 +111,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
             ml: 'auto',
             color: 'text.disabled',
             gap: 0.5,
-            opacity: todo.completed ? 0.6 : 1,
           }}
         >
           {todo.description && (

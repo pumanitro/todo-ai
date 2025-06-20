@@ -40,6 +40,11 @@ alwaysApply: true
 - **Edit**: Update text/description/dueDate + auto-recategorize on due date change
 - **Delete**: Remove from Firebase + close any open drawers
 
+## UI Layout Structure
+- **Card 1**: Today + Backlog sections (main active tasks, primary focus)
+- **Card 2**: Postponed tasks (separate card, collapsible by date groups)
+- **Completed tasks**: No card wrapper, reduced visibility with opacity 0.7 (hover to full opacity)
+
 ## UI Flow
 - Today section → active tasks for current day + overdue tasks
 - Postponed section → tasks with future due dates, grouped by date (collapsible, hidden by default)
@@ -55,6 +60,9 @@ alwaysApply: true
 - **Visual Hierarchy**: Subtitle1 typography for group headers, proper spacing between groups
 
 ## UI Design Pattern
+- **Card Layout**: Enhanced shadows for better contrast (multi-layer shadows + subtle border)
+- **Section Grouping**: Related sections (Today+Backlog) grouped in single cards
+- **Visibility Hierarchy**: Completed tasks less prominent with reduced opacity
 - **Compact Layout**: Reduced spacing, small components (py: 0.5, mb: 1-2)
 - **Todo Items**: Bordered boxes with due date chips and "Drag to reorder" text
 - **Due Date Display**: Color-coded chips (error=overdue, warning=today, info=soon)

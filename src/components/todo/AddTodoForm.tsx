@@ -64,9 +64,6 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
 
   return (
     <>
-      <Typography variant="h5" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
-        Add New Task
-      </Typography>
       <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
         <TextField
           fullWidth

@@ -53,8 +53,8 @@ const TodoSection: React.FC<TodoSectionProps> = ({
   return (
     <Box sx={{ mb: title ? 2 : 1 }}>
       {title && (
-        <Typography variant="h6" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
-          {title} ({todos.length})
+        <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
+          {title}
         </Typography>
       )}
 

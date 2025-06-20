@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Typography, Avatar, Chip, Button } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Box, Typography, Avatar, IconButton, Tooltip, Button } from '@mui/material';
+import { Logout, Wifi, WifiOff } from '@mui/icons-material';
 import { User, signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 
@@ -27,10 +27,11 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Chip 
-          label={isConnected ? 'Connected' : 'Connecting...'} 
-          color={isConnected ? 'success' : 'warning'}
-        />
+        <Tooltip title={isConnected ? 'Connected' : 'Connecting...'}>
+          <IconButton size="small" sx={{ color: isConnected ? 'success.main' : 'warning.main' }}>
+            {isConnected ? <Wifi /> : <WifiOff />}
+          </IconButton>
+        </Tooltip>
         <Button
           variant="outlined"
           startIcon={<Logout />}

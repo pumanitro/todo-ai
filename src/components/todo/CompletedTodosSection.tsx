@@ -29,6 +29,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
           alignItems: 'center', 
           cursor: 'pointer',
           py: 0.5,
+          ml: 2,
           '&:hover': {
             backgroundColor: 'action.hover',
           },
@@ -36,16 +37,16 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
         }}
         onClick={() => setShowCompleted(!showCompleted)}
       >
-        <Typography variant="h6" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
-          Completed Tasks ({completedTodos.length})
-        </Typography>
         <IconButton size="small">
           {showCompleted ? <ExpandLess /> : <ExpandMore />}
         </IconButton>
+        <Typography variant="overline" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
+          Completed ({completedTodos.length})
+        </Typography>
       </Box>
       
       <Collapse in={showCompleted}>
-        <Box sx={{ mt: 1, '& > *': { mb: 0.5 } }}>
+        <Box sx={{ mt: 1, ml: 2, '& > *': { mb: 0.5 } }}>
           {completedTodos.map((todo, index) => (
             <TodoItem
               key={todo.id}

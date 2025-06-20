@@ -344,12 +344,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     } else if (dateString === tomorrowString) {
       return 'Tomorrow';
     } else {
-      // Show day of week and date
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      });
+      // Show date in DD.MM.YYYY format
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
     }
   };
 
@@ -359,10 +358,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     <Container maxWidth="md" sx={{ py: 2 }}>
       <UserHeader user={user} isConnected={isConnected} />
 
+      {/* Today + Backlog Card - Main active tasks */}
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <AddTodoForm onAddTodo={addTodo} />
-
           <DragDropContext onDragEnd={handleDragEnd}>
             <TodoSection
               category="today"
@@ -372,44 +370,56 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               onTodoClick={handleTodoClick}
             />
 
-            <TodoSection
-              category="backlog"
-              todos={backlogTodos}
-              title="Backlog"
-              onToggleTodo={toggleTodo}
-              onTodoClick={handleTodoClick}
-            />
-          </DragDropContext>
-
-          {/* Postponed Section - Collapsible */}
-          {postponedTodos.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  cursor: 'pointer',
-                  py: 0.5,
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                  borderRadius: 1,
-                }}
-                onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
-              >
-                <Typography variant="h6" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
-                  Postponed Tasks ({postponedTodos.length})
-                </Typography>
-                <IconButton size="small">
-                  {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-              </Box>
+            {/* Backlog Section with Add Todo Form */}
+            <Box sx={{ mb: 0 }}>
+              <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
+                Backlog
+              </Typography>
               
-                              <Collapse in={isPostponedExpanded}>
-                <Box sx={{ mt: 1 }}>
-                  {postponedGroups.map((group, groupIndex) => (
-                    <Box key={groupIndex} sx={{ mb: groupIndex < postponedGroups.length - 1 ? 2.5 : 0 }}>
-                      <Typography 
+              <AddTodoForm onAddTodo={addTodo} />
+
+              <TodoSection
+                category="backlog"
+                todos={backlogTodos}
+                title=""
+                onToggleTodo={toggleTodo}
+                onTodoClick={handleTodoClick}
+              />
+            </Box>
+          </DragDropContext>
+        </CardContent>
+      </Card>
+
+      {/* Postponed Tasks Card - Separate section */}
+      {postponedTodos.length > 0 && (
+        <Card sx={{ mb: 2 }}>
+          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                py: 0.5,
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+                borderRadius: 1,
+              }}
+              onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
+            >
+              <IconButton size="small">
+                {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+              <Typography variant="overline" sx={{ flexGrow: 1, mb: 0, fontWeight: 600 }}>
+                Postponed
+              </Typography>
+            </Box>
+            
+            <Collapse in={isPostponedExpanded}>
+              <Box sx={{ mt: 1, pl: 2 }}>
+                {postponedGroups.map((group, groupIndex) => (
+                  <Box key={groupIndex} sx={{ mb: groupIndex < postponedGroups.length - 1 ? 2.5 : 0 }}>
+                                          <Typography 
                         variant="subtitle1" 
                         sx={{ 
                           fontWeight: 600,
@@ -418,35 +428,39 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                           fontSize: '0.95rem'
                         }}
                       >
-                        {group.displayDate} ({group.todos.length})
+                        {group.displayDate}
                       </Typography>
-                      <Box sx={{ '& > *': { mb: 0.5 } }}>
-                        {group.todos.map((todo, todoIndex) => (
-                          <TodoItem
-                            key={todo.id}
-                            todo={todo}
-                            index={todoIndex}
-                            onToggle={toggleTodo}
-                            onClick={handleTodoClick}
-                            isDraggable={false}
-                            hideDueDate={true}
-                          />
-                        ))}
-                      </Box>
+                    <Box sx={{ '& > *': { mb: 0.5 } }}>
+                      {group.todos.map((todo, todoIndex) => (
+                        <TodoItem
+                          key={todo.id}
+                          todo={todo}
+                          index={todoIndex}
+                          onToggle={toggleTodo}
+                          onClick={handleTodoClick}
+                          isDraggable={false}
+                          hideDueDate={true}
+                        />
+                      ))}
                     </Box>
-                  ))}
-                </Box>
-              </Collapse>
-            </Box>
-          )}
+                  </Box>
+                ))}
+              </Box>
+            </Collapse>
+          </CardContent>
+        </Card>
+      )}
 
+      {/* Completed Tasks - Less visible */}
+      {completedTodos.length > 0 && (
+        <Box sx={{ mb: 2 }}>
           <CompletedTodosSection
             completedTodos={completedTodos}
             onToggleTodo={toggleTodo}
             onTodoClick={handleTodoClick}
           />
-        </CardContent>
-      </Card>
+        </Box>
+      )}
 
       <TodoDetailsDrawer
         isOpen={isDrawerOpen}
