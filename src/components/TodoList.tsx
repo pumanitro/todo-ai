@@ -655,7 +655,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onDelete={deleteTodo}
       />
 
-      {/* Mobile FAB - positioned in top right corner */}
+      {/* Mobile FAB - positioned in bottom right corner */}
       {isMobile && (
         <Fab
           color="primary"
@@ -663,7 +663,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           onClick={() => setIsAddDrawerOpen(true)}
           sx={{
             position: 'fixed',
-            top: 16,
+            bottom: 16,
             right: 16,
             zIndex: theme.zIndex.fab,
           }}

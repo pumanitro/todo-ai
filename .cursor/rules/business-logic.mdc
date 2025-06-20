@@ -94,7 +94,7 @@ alwaysApply: true
 
 ## Mobile UI Pattern
 - **Add Task Form**: Hidden on mobile (`isMobile` breakpoint detection)
-- **Floating Action Button (FAB)**: Fixed position top-right corner, only visible on mobile
+- **Floating Action Button (FAB)**: Fixed position bottom-right corner, only visible on mobile
 - **Bottom Drawer**: SwipeableDrawer from bottom when FAB clicked, contains AddTodoForm
 - **Auto-Close**: Drawer closes automatically after task creation
 - **Responsive Breakpoint**: `theme.breakpoints.down('sm')` for mobile detection
