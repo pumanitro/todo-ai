@@ -3,6 +3,7 @@ import { ListItem, Checkbox, Box, Typography, Chip } from '@mui/material';
 import { CheckCircle, RadioButtonUnchecked, DragIndicator, Description, Event } from '@mui/icons-material';
 import { Draggable } from '@hello-pangea/dnd';
 import { Todo } from '../../types/todo';
+import { renderTextWithLinks } from '../../utils/linkUtils';
 
 interface TodoItemProps {
   todo: Todo;
@@ -93,7 +94,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
               textDecoration: 'line-through',
             } : {}}
           >
-            {todo.text}
+            {renderTextWithLinks(todo.text)}
           </Typography>
           {todo.dueDate && !hideDueDate && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
@@ -171,7 +172,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
                   whiteSpace: 'nowrap'
                 }}
               >
-                {child.text}
+                {renderTextWithLinks(child.text)}
               </Typography>
             </Box>
           ))}

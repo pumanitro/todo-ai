@@ -31,6 +31,7 @@ alwaysApply: true
 - **Circular Prevention**: Tasks cannot block themselves or create circular dependencies
 - **Scope Filters**: Only active (non-completed), non-nested parent tasks can block others
 - **Dropdown Grouping**: Blocked By dropdown shows tasks grouped by TODAY, BACKLOG & POSTPONED categories with proper ordering
+- **Nesting Implementation**: All sections (Today, Backlog, Postponed) use consistent hierarchical organization pattern
 
 ## Due Date Categorization
 - **No due date** → backlog category
@@ -78,10 +79,11 @@ alwaysApply: true
 ## Postponed Tasks Grouping
 - **Date Grouping**: Group postponed parent tasks by due date, nearest dates first
 - **Group Sorting**: Today → Tomorrow → Future dates (chronological) → No Date (last)
-- **Date Labels**: "Today", "Tomorrow", or "Day, Mon DD" format
+- **Date Labels**: "Today", "Tomorrow", or "DD.MM.YYYY" format
 - **Task Count**: Show count per date group in parentheses
 - **Visual Hierarchy**: Subtitle1 typography for group headers, proper spacing between groups
 - **Nesting Priority**: Blocked tasks appear under their parent regardless of their own due date/category
+- **Consistent Implementation**: Uses same hierarchical organization pattern as NestedTodoSection for all sections
 
 ## UI Design Pattern
 - **Card Layout**: Enhanced shadows for better contrast (multi-layer shadows + subtle border)
@@ -99,6 +101,14 @@ alwaysApply: true
 - **Bottom Drawer**: SwipeableDrawer from bottom when FAB clicked, contains AddTodoForm
 - **Auto-Close**: Drawer closes automatically after task creation
 - **Responsive Breakpoint**: `theme.breakpoints.down('sm')` for mobile detection
+
+## Text Rendering & Links
+- **URL Detection**: Automatic detection of HTTP/HTTPS URLs in task names and descriptions using regex
+- **Clickable Links**: URLs converted to blue clickable links that open in new tab (target="_blank")
+- **Link Truncation**: Long URLs displayed with max 65 characters + "..." for clean UI
+- **Click Prevention**: Link clicks use stopPropagation to prevent task selection when clicking links
+- **Preview Mode**: Task descriptions show rendered preview with clickable links below edit field
+- **Consistent Styling**: Links use primary theme color with underline decoration
 
 ## Progressive Web App (PWA) Features
 - **Service Worker**: `public/sw.js` caches resources for offline functionality
