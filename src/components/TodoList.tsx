@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Container, Collapse, IconButton, Box, Typography, Alert, Snackbar } from '@mui/material';
-import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import { Card, CardContent, Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, SwipeableDrawer, useTheme, useMediaQuery } from '@mui/material';
+import { ExpandMore, ExpandLess, Add } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { database } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
@@ -26,6 +26,10 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isPostponedExpanded, setIsPostponedExpanded] = useState<boolean>(false);
   const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
+  const [isAddDrawerOpen, setIsAddDrawerOpen] = useState<boolean>(false);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const transformFirebaseDataToTodos = (data: any): Todo[] => {
     if (!data) return [];
@@ -563,7 +567,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 Backlog
               </Typography>
               
-              <AddTodoForm onAddTodo={addTodo} />
+              {/* Show AddTodoForm only on desktop */}
+              {!isMobile && <AddTodoForm onAddTodo={addTodo} />}
 
               <NestedTodoSection
                 category="backlog"
@@ -649,6 +654,51 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onSaveEdit={handleSaveEdit}
         onDelete={deleteTodo}
       />
+
+      {/* Mobile FAB - positioned in top right corner */}
+      {isMobile && (
+        <Fab
+          color="primary"
+          aria-label="add task"
+          onClick={() => setIsAddDrawerOpen(true)}
+          sx={{
+            position: 'fixed',
+            top: 16,
+            right: 16,
+            zIndex: theme.zIndex.fab,
+          }}
+        >
+          <Add />
+        </Fab>
+      )}
+
+      {/* Mobile Bottom Drawer for Add Task */}
+      <SwipeableDrawer
+        anchor="bottom"
+        open={isAddDrawerOpen}
+        onClose={() => setIsAddDrawerOpen(false)}
+        onOpen={() => setIsAddDrawerOpen(true)}
+        disableSwipeToOpen
+        sx={{
+          '& .MuiDrawer-paper': {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            pb: 2,
+          },
+        }}
+      >
+        <Box sx={{ px: 3, py: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+            Add New Task
+          </Typography>
+          <AddTodoForm 
+            onAddTodo={(text, dueDate) => {
+              addTodo(text, dueDate);
+              setIsAddDrawerOpen(false);
+            }} 
+          />
+        </Box>
+      </SwipeableDrawer>
 
       <Snackbar
         open={!!movedTasksNotification}

@@ -91,3 +91,10 @@ alwaysApply: true
 - **Due Date Display**: Color-coded chips (error=overdue, warning=today, info=soon)
 - **Typography**: body2 for items, small icons, reduced font sizes
 - **Flexbox Positioning**: Use justify-content/align-items instead of absolute positioning
+
+## Mobile UI Pattern
+- **Add Task Form**: Hidden on mobile (`isMobile` breakpoint detection)
+- **Floating Action Button (FAB)**: Fixed position top-right corner, only visible on mobile
+- **Bottom Drawer**: SwipeableDrawer from bottom when FAB clicked, contains AddTodoForm
+- **Auto-Close**: Drawer closes automatically after task creation
+- **Responsive Breakpoint**: `theme.breakpoints.down('sm')` for mobile detection
