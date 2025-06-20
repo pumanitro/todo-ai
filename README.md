@@ -1,6 +1,93 @@
-# Todo AI - React TypeScript Firebase App
+# Todo AI - Progressive Web App
 
-A modern React application built with TypeScript, Firebase Real-time Database, and Material UI.
+A powerful, AI-enhanced todo app with task hierarchies, due dates, and smart categorization. Now available as a downloadable PWA!
+
+## Features
+
+- ✅ **Task Management**: Create, edit, and organize your tasks
+- 📅 **Smart Due Dates**: Automatic categorization based on due dates
+- 🔗 **Task Dependencies**: Block tasks based on other tasks
+- 📱 **Mobile-First**: Responsive design with mobile FAB
+- 🔄 **Real-time Sync**: Firebase integration for cross-device sync
+- 📲 **PWA Ready**: Downloadable app with offline capabilities
+- 🎨 **Material Design**: Beautiful, modern UI
+
+## PWA Features
+
+- **Downloadable**: Install directly to your device
+- **Offline Support**: Service worker for offline functionality
+- **App-like Experience**: Standalone display mode
+- **Push Notifications**: (Future feature)
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up Firebase configuration
+4. Run: `npm start`
+
+## PWA Setup
+
+### Creating Icons
+
+The app uses placeholder icons. To create proper PWA icons:
+
+1. **Option 1: Use an online generator**
+   - Visit [PWA Asset Generator](https://www.pwabuilder.com/imageGenerator)
+   - Upload your logo/icon
+   - Generate and download icons
+   - Replace `public/icon-192.png` and `public/icon-512.png`
+
+2. **Option 2: Manual creation**
+   - Create two PNG files:
+     - `icon-192.png` (192x192 pixels)
+     - `icon-512.png` (512x512 pixels)
+   - Use your app logo with proper Material Design guidelines
+   - Place in the `public/` directory
+
+3. **Option 3: Use the generator script**
+   ```bash
+   npm install canvas
+   node scripts/generate-icons.js
+   ```
+
+### Installing the PWA
+
+1. Open the app in a supported browser (Chrome, Edge, Firefox)
+2. Look for the install prompt or "Add to Home Screen" option
+3. Click "Install" when prompted
+4. The app will be available on your device like a native app
+
+### Browser Support
+
+- ✅ Chrome/Chromium (full support)
+- ✅ Edge (full support)
+- ✅ Firefox (partial support)
+- ✅ Safari (partial support)
+
+## Development
+
+```bash
+npm start        # Start development server
+npm run build    # Build for production
+npm test         # Run tests
+```
+
+## Business Logic
+
+See `.cursor/rules/business-logic.md` for detailed business rules and data models.
+
+## Technologies
+
+- React 18 + TypeScript
+- Material-UI v5
+- Firebase (Auth + Realtime Database)
+- Hello Pangea DnD (drag & drop)
+- Service Worker + Web App Manifest
+
+## License
+
+MIT License
 
 ## 🚀 Features
 

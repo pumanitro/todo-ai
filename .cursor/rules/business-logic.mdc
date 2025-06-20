@@ -98,3 +98,13 @@ alwaysApply: true
 - **Bottom Drawer**: SwipeableDrawer from bottom when FAB clicked, contains AddTodoForm
 - **Auto-Close**: Drawer closes automatically after task creation
 - **Responsive Breakpoint**: `theme.breakpoints.down('sm')` for mobile detection
+
+## Progressive Web App (PWA) Features
+- **Service Worker**: `public/sw.js` caches resources for offline functionality
+- **Web App Manifest**: `public/manifest.json` defines app metadata and behavior
+- **Installation**: PWAInstallPrompt component handles browser install prompts
+- **Offline Support**: Cached resources allow basic functionality without network
+- **App Icons**: 192x192 and 512x512 PNG icons for various devices
+- **Standalone Mode**: App runs without browser UI when installed
+- **Theme Integration**: PWA theme colors match Material-UI theme
+- **App Shortcuts**: Manifest defines quick actions for installed app

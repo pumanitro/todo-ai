@@ -13,6 +13,7 @@ import NestedTodoSection from './todo/NestedTodoSection';
 import CompletedTodosSection from './todo/CompletedTodosSection';
 import TodoDetailsDrawer from './todo/TodoDetailsDrawer';
 import TodoItem from './todo/TodoItem';
+import PWAInstallPrompt from './PWAInstallPrompt';
 
 interface TodoListProps {
   user: User;
@@ -715,6 +716,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           {movedTasksNotification}
         </Alert>
       </Snackbar>
+
+      <PWAInstallPrompt />
     </Container>
   );
 };
