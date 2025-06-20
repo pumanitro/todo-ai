@@ -1,4 +1,5 @@
-const CACHE_NAME = 'todo-ai-v1';
+/* eslint-disable no-restricted-globals */
+const CACHE_NAME = 'todo-ai-v2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -22,23 +23,46 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Fetch event - serve cached content when offline
+// Fetch event - network-first strategy for development, cache-first for static assets
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
+  const url = new URL(event.request.url);
+  
+  // For local development (localhost), use network-first strategy
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    // Network-first strategy for development
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Clone the response before caching
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
           return response;
-        }
-        return fetch(event.request).catch(() => {
-          // If both cache and network fail, could return a fallback page
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
+        })
+        .catch(() => {
+          // Fall back to cache if network fails
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Cache-first strategy for production/external resources
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          // Return cached version or fetch from network
+          if (response) {
+            return response;
           }
-        });
-      })
-  );
+          return fetch(event.request).catch(() => {
+            // If both cache and network fail, could return a fallback page
+            if (event.request.mode === 'navigate') {
+              return caches.match('/');
+            }
+          });
+        })
+    );
+  }
 });
 
 // Activate event - clean up old caches
