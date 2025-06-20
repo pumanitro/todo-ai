@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME = 'todo-ai-v2';
+const CACHE_NAME = 'todo-ai-v4';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
