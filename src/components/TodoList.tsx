@@ -688,8 +688,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         }}
       >
         <Box sx={{ px: 3, py: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-            Add New Task
+          <Typography variant="subtitle1" gutterBottom sx={{ mb: 2, fontSize: '1rem' }}>
+            Add New Backlog Task
           </Typography>
           <AddTodoForm 
             onAddTodo={(text, dueDate) => {
