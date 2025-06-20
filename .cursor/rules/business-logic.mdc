@@ -31,6 +31,7 @@ alwaysApply: true
 - Firebase Realtime Database for persistence
 - React state with real-time sync via `onValue()`
 - User authentication via Firebase Auth
+- **Auto-Migration**: On data load, postponed tasks due today automatically move to Today category with user notification
 
 ## Key Operations
 - **Add**: Auto-categorize by due date, `order = minCategoryOrder - 1`

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Container, Collapse, IconButton, Box, Typography } from '@mui/material';
+import { Card, CardContent, Container, Collapse, IconButton, Box, Typography, Alert, Snackbar } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { database } from '../firebase/config';
@@ -23,6 +23,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isPostponedExpanded, setIsPostponedExpanded] = useState<boolean>(false);
+  const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
 
   useEffect(() => {
     const todosRef = ref(database, `users/${user.uid}/todos`);
@@ -47,6 +48,34 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           }
           return a.order - b.order;
         });
+
+        // Check for postponed tasks that should be moved to today
+        const tasksToMove = todoList.filter(todo => 
+          !todo.completed && 
+          todo.category === 'postponed' && 
+          categorizeTodoByDueDate(todo.dueDate) === 'today'
+        );
+
+        if (tasksToMove.length > 0) {
+          // Move tasks to today category
+          const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
+          const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+
+          tasksToMove.forEach(async (task, index) => {
+            const todoRef = ref(database, `users/${user.uid}/todos/${task.id}`);
+            await update(todoRef, {
+              category: 'today',
+              order: minTodayOrder - 1 - index
+            });
+          });
+
+          // Show notification
+          const message = tasksToMove.length === 1 
+            ? `1 task was moved from Postponed to Today because it's due today`
+            : `${tasksToMove.length} tasks were moved from Postponed to Today because they're due today`;
+          setMovedTasksNotification(message);
+        }
+
         setTodos(todoList);
         setIsConnected(true);
       } else {
@@ -402,6 +431,22 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onSaveEdit={handleSaveEdit}
         onDelete={deleteTodo}
       />
+
+      <Snackbar
+        open={!!movedTasksNotification}
+        autoHideDuration={6000}
+        onClose={() => setMovedTasksNotification('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setMovedTasksNotification('')} 
+          severity="info" 
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {movedTasksNotification}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
