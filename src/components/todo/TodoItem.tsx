@@ -90,9 +90,15 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
           <Typography 
             variant="body2"
-            sx={todo.completed ? { 
-              textDecoration: 'line-through',
-            } : {}}
+            sx={{
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              hyphens: 'auto',
+              lineHeight: 1.3,
+              ...(todo.completed ? { 
+                textDecoration: 'line-through',
+              } : {})
+            }}
           >
             {renderTextWithLinks(todo.text)}
           </Typography>
@@ -116,7 +122,8 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           sx={{ 
             display: 'flex', 
             alignItems: 'center',
-            ml: 'auto',
+            ml: 1,
+            flexShrink: 0,
             color: 'text.disabled',
             gap: 0.5,
           }}
@@ -167,9 +174,11 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
                   fontSize: '0.75rem', 
                   color: 'primary.dark',
                   fontWeight: 500,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  lineHeight: 1.2,
+                  flex: 1,
+                  minWidth: 0
                 }}
               >
                 {renderTextWithLinks(child.text)}

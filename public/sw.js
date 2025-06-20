@@ -14,7 +14,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-ai-v6';
+const CACHE_NAME = 'todo-ai-v7';
 
 /**
  * In production your build pipeline should replace

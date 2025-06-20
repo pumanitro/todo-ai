@@ -23,6 +23,8 @@ export const renderTextWithLinks = (text: string): React.ReactNode => {
           sx={{
             color: 'primary.main',
             textDecoration: 'underline',
+            wordBreak: 'break-all',
+            overflowWrap: 'break-word',
             '&:hover': {
               textDecoration: 'underline',
             },
