@@ -11,6 +11,10 @@ alwaysApply: true
 - **User Data**: Firebase path `users/${uid}/todos/`
 - **Due Date**: ISO date string (YYYY-MM-DD), optional field
 
+## Security
+- **Authentication**: Required for all database operations (`auth != null`)
+- **User Isolation**: Users can only access their own data (`$uid === auth.uid`)
+
 ## Core Rules
 - New todos → auto-categorized by due date logic
 - Completed todos → keep current category, move to bottom with `order = minCompletedOrder - 1`  

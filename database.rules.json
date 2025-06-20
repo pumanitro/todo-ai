@@ -1,7 +1,12 @@
 {
   "rules": {
+    // Require authentication for all operations
+    ".read": "auth != null",
+    ".write": "auth != null",
+    
     "users": {
       "$uid": {
+        // Only allow users to access their own data
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
       }
