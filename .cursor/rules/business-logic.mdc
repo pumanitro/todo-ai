@@ -30,7 +30,7 @@ alwaysApply: true
 - **Drag Restrictions**: Blocked tasks cannot be dragged (isDraggable=false)
 - **Circular Prevention**: Tasks cannot block themselves or create circular dependencies
 - **Scope Filters**: Only active (non-completed), non-nested parent tasks can block others
-- **Dropdown Grouping**: Blocked By dropdown shows tasks grouped by TODAY & BACKLOG categories with proper ordering
+- **Dropdown Grouping**: Blocked By dropdown shows tasks grouped by TODAY, BACKLOG & POSTPONED categories with proper ordering
 
 ## Due Date Categorization
 - **No due date** → backlog category
@@ -76,11 +76,12 @@ alwaysApply: true
 - **Blocked Task Indicators**: Cannot be dragged, managed only via blockedBy field
 
 ## Postponed Tasks Grouping
-- **Date Grouping**: Group postponed tasks by due date, nearest dates first
+- **Date Grouping**: Group postponed parent tasks by due date, nearest dates first
 - **Group Sorting**: Today → Tomorrow → Future dates (chronological) → No Date (last)
 - **Date Labels**: "Today", "Tomorrow", or "Day, Mon DD" format
 - **Task Count**: Show count per date group in parentheses
 - **Visual Hierarchy**: Subtitle1 typography for group headers, proper spacing between groups
+- **Nesting Priority**: Blocked tasks appear under their parent regardless of their own due date/category
 
 ## UI Design Pattern
 - **Card Layout**: Enhanced shadows for better contrast (multi-layer shadows + subtle border)

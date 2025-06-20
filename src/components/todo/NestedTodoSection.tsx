@@ -11,6 +11,7 @@ interface NestedTodoSectionProps {
   onToggleTodo: (todoId: string, completed: boolean) => void;
   onTodoClick: (todo: Todo) => void;
   animatingTaskIds?: Set<string>;
+  shouldHighlightDrop?: boolean;
 }
 
 interface TodoHierarchy {
@@ -24,7 +25,8 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   title, 
   onToggleTodo, 
   onTodoClick,
-  animatingTaskIds = new Set()
+  animatingTaskIds = new Set(),
+  shouldHighlightDrop = false
 }) => {
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
@@ -184,12 +186,12 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
             ref={provided.innerRef}
             sx={{
               minHeight: allDisplayTodos.length === 0 ? 60 : 'auto',
-              backgroundColor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
-              border: snapshot.isDraggingOver ? '2px dashed' : '2px solid transparent',
-              borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
+              backgroundColor: (snapshot.isDraggingOver || shouldHighlightDrop) ? 'action.hover' : 'transparent',
+              border: (snapshot.isDraggingOver || shouldHighlightDrop) ? '2px dashed' : '2px solid transparent',
+              borderColor: (snapshot.isDraggingOver || shouldHighlightDrop) ? 'primary.main' : 'transparent',
               borderRadius: 1,
               transition: 'all 0.2s ease',
-              p: snapshot.isDraggingOver ? 1 : 0,
+              p: (snapshot.isDraggingOver || shouldHighlightDrop) ? 1 : 0,
             }}
           >
             {allDisplayTodos.length === 0 ? (
@@ -208,16 +210,16 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
               }}>
                 <Typography 
                   variant="body2" 
-                  color={snapshot.isDraggingOver ? "primary.main" : "text.secondary"}
-                  fontWeight={snapshot.isDraggingOver ? 600 : 400}
+                  color={(snapshot.isDraggingOver || shouldHighlightDrop) ? "primary.main" : "text.secondary"}
+                  fontWeight={(snapshot.isDraggingOver || shouldHighlightDrop) ? 600 : 400}
                   sx={{ fontSize: '0.9rem' }}
                 >
-                  {snapshot.isDraggingOver 
+                  {(snapshot.isDraggingOver || shouldHighlightDrop)
                     ? emptyState.dropMessage
                     : emptyState.defaultMessage
                   }
                 </Typography>
-                {!snapshot.isDraggingOver && emptyState.subMessage && (
+                {!(snapshot.isDraggingOver || shouldHighlightDrop) && emptyState.subMessage && (
                   <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
                     {emptyState.subMessage}
                   </Typography>

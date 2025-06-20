@@ -44,7 +44,7 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
 
   // Get available tasks for blocking grouped by category
   const getAvailableBlockingTasks = () => {
-    if (!todo) return { today: [], backlog: [] };
+    if (!todo) return { today: [], backlog: [], postponed: [] };
     
     // Filter available tasks (exclude current task, completed tasks, nested tasks, and circular dependencies)
     const availableTasks = todos.filter(t => 
@@ -73,7 +73,16 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
         return a.order - b.order;
       });
 
-    return { today: todayTasks, backlog: backlogTasks };
+    const postponedTasks = availableTasks
+      .filter(t => t.category === 'postponed')
+      .sort((a, b) => {
+        if (a.order === b.order) {
+          return b.timestamp - a.timestamp;
+        }
+        return a.order - b.order;
+      });
+
+    return { today: todayTasks, backlog: backlogTasks, postponed: postponedTasks };
   };
 
   const formatDueDate = (dueDate: string) => {
@@ -196,6 +205,22 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
                       </ListSubheader>
                     );
                     groupedTasks.backlog.forEach((task) => {
+                      items.push(
+                        <MenuItem key={task.id} value={task.id} sx={{ pl: 3 }}>
+                          {task.text}
+                        </MenuItem>
+                      );
+                    });
+                  }
+                  
+                  // Postponed section
+                  if (groupedTasks.postponed.length > 0) {
+                    items.push(
+                      <ListSubheader key="postponed-header" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                        POSTPONED
+                      </ListSubheader>
+                    );
+                    groupedTasks.postponed.forEach((task) => {
                       items.push(
                         <MenuItem key={task.id} value={task.id} sx={{ pl: 3 }}>
                           {task.text}

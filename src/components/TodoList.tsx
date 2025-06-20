@@ -28,6 +28,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState<boolean>(false);
+  const [dragFromCategory, setDragFromCategory] = useState<'today' | 'backlog' | 'postponed' | null>(null);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -361,12 +362,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   };
 
   // Helper function to render nested tasks in postponed section
-  const renderNestedTasks = (todosList: Todo[]) => {
-    const parentTasks = todosList.filter(t => !t.blockedBy);
-    const blockedTasks = todosList.filter(t => t.blockedBy);
-    
+  // This version prioritizes nesting over date grouping by looking for blocked children in entire todos list
+  const renderNestedTasksInPostponed = (parentTasksList: Todo[]) => {
     const renderTaskWithChildren = (todo: Todo, index: number) => {
-      const children = blockedTasks.filter(child => child.blockedBy === todo.id);
+      // Find ALL blocked children of this parent from the entire todos list, regardless of category
+      const children = todos.filter(child => 
+        child.blockedBy === todo.id && !child.completed
+      );
       
       return (
         <Box key={todo.id} sx={{ mb: 0.5 }}>
@@ -426,10 +428,18 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       );
     };
 
-    return parentTasks.map((todo, index) => renderTaskWithChildren(todo, index));
+    return parentTasksList.map((todo, index) => renderTaskWithChildren(todo, index));
+  };
+
+  const handleDragStart = (result: any) => {
+    const sourceCategory = result.source.droppableId as 'today' | 'backlog' | 'postponed';
+    setDragFromCategory(sourceCategory);
   };
 
   const handleDragEnd = async (result: DropResult) => {
+    // Clear drag state
+    setDragFromCategory(null);
+    
     if (!result.destination) return;
 
     const sourceDroppableId = result.source.droppableId;
@@ -507,11 +517,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
   const completedTodos = todos.filter(todo => todo.completed);
 
-  // Group postponed todos by date
+  // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const groupPostponedTodosByDate = () => {
+    // Only group parent tasks (non-blocked tasks) from postponed category
+    const postponedParentTasks = postponedTodos.filter(todo => !todo.blockedBy);
     const grouped: { [date: string]: Todo[] } = {};
     
-    postponedTodos.forEach(todo => {
+    postponedParentTasks.forEach(todo => {
       const date = todo.dueDate || 'No Date';
       if (!grouped[date]) {
         grouped[date] = [];
@@ -538,7 +550,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
     return sortedDates.map(date => ({
       date,
-      todos: grouped[date],
+      parentTasks: grouped[date], // Renamed for clarity
       displayDate: date === 'No Date' ? 'No Date' : formatDateGroupTitle(date)
     }));
   };
@@ -552,7 +564,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       {/* Today + Backlog Card - Main active tasks */}
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <NestedTodoSection
               category="today"
               todos={todayTodos}
@@ -560,6 +572,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               onToggleTodo={toggleTodo}
               onTodoClick={handleTodoClick}
               animatingTaskIds={animatingTaskIds}
+              shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
             />
 
             {/* Backlog Section with Add Todo Form */}
@@ -578,6 +591,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 onToggleTodo={toggleTodo}
                 onTodoClick={handleTodoClick}
                 animatingTaskIds={animatingTaskIds}
+                shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
               />
             </Box>
           </DragDropContext>
@@ -625,7 +639,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                       {group.displayDate}
                     </Typography>
                     <Box sx={{ '& > *': { mb: 0.5 } }}>
-                      {renderNestedTasks(group.todos)}
+                      {renderNestedTasksInPostponed(group.parentTasks)}
                     </Box>
                   </Box>
                 ))}

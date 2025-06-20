@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Typography, Box, TextField, Button, IconButton } from '@mui/material';
+import { Typography, Box, TextField, Button, IconButton, useTheme, useMediaQuery } from '@mui/material';
 import { Add, Event } from '@mui/icons-material';
 
 interface AddTodoFormProps {
@@ -11,6 +11,9 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
   const [dueDate, setDueDate] = useState<string>('');
   const [showDateInput, setShowDateInput] = useState<boolean>(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleSubmit = () => {
     if (newTodo.trim()) {
@@ -31,11 +34,9 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
     setShowDateInput(true);
   };
 
-
-
   const handleDateInputBlur = () => {
-    // Hide the input if no date is selected
-    if (!dueDate) {
+    // Hide the input if no date is selected (only on desktop)
+    if (!dueDate && !isMobile) {
       setShowDateInput(false);
     }
   };
@@ -49,9 +50,9 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
     });
   };
 
-  // Auto-open calendar when date input appears
+  // Auto-open calendar when date input appears (desktop only)
   useEffect(() => {
-    if (showDateInput && dateInputRef.current) {
+    if (showDateInput && dateInputRef.current && !isMobile) {
       // Small delay to ensure the input is rendered
       setTimeout(() => {
         if (dateInputRef.current) {
@@ -60,7 +61,10 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
         }
       }, 100);
     }
-  }, [showDateInput]);
+  }, [showDateInput, isMobile]);
+
+  // On mobile, always show date input; on desktop, use the toggle behavior
+  const shouldShowDateInput = isMobile || showDateInput;
 
   return (
     <>
@@ -94,7 +98,7 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
           width: { xs: '100%', sm: 'auto' }
         }}>
           {/* Date Input or Icon Button */}
-          {showDateInput ? (
+          {shouldShowDateInput ? (
             <TextField
               ref={dateInputRef}
               type="date"
@@ -102,13 +106,14 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo }) => {
               value={dueDate}
               onChange={(e) => {
                 setDueDate(e.target.value);
-                // If date is cleared, hide the input
-                if (!e.target.value) {
+                // If date is cleared, hide the input (only on desktop)
+                if (!e.target.value && !isMobile) {
                   setShowDateInput(false);
                 }
               }}
               onBlur={handleDateInputBlur}
               size="small"
+              label={isMobile ? "Due Date" : undefined}
               sx={{ 
                 width: { xs: 'auto', sm: 220 },
                 '& .MuiInputBase-input': {
