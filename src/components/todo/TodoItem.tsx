@@ -43,8 +43,24 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
     return { color, label };
   };
 
+  // Simple CSS for shake animation
+  const shakeAnimationStyles = {
+    '@keyframes shakeX': {
+      'from, to': {
+        transform: 'translate3d(0, 0, 0)',
+      },
+      '10%, 30%, 50%, 70%, 90%': {
+        transform: 'translate3d(-5px, 0, 0)',
+      },
+      '20%, 40%, 60%, 80%': {
+        transform: 'translate3d(5px, 0, 0)',
+      },
+    },
+  };
+
   const todoContent = (provided?: any, snapshot?: any) => (
-    <Box sx={{ mb: 1 }}>
+    <Box sx={{ mb: 1, position: 'relative', ...shakeAnimationStyles }}>
+
       <ListItem 
         ref={provided?.innerRef}
         {...(provided?.draggableProps || {})}
@@ -53,9 +69,9 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         onClick={() => onClick(todo)}
         sx={{ 
           cursor: isDraggable ? (snapshot?.isDragging ? 'grabbing' : 'grab') : 'pointer',
-          backgroundColor: isAnimating ? 'primary.light' : (snapshot?.isDragging ? 'action.hover' : 'transparent'),
+          backgroundColor: snapshot?.isDragging ? 'action.hover' : 'transparent',
           '&:hover': {
-            backgroundColor: isAnimating ? 'primary.light' : 'action.hover',
+            backgroundColor: 'action.hover',
           },
           display: 'flex',
           alignItems: 'center',
@@ -63,14 +79,15 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           px: 1,
           minHeight: 'auto',
           border: '1px solid',
-          borderColor: isAnimating ? 'primary.main' : 'divider',
+          borderColor: isAnimating ? '#64b5f6' : 'divider',
           borderWidth: isAnimating ? '2px' : '1px',
           borderRadius: 1,
           mb: 0,
-          // Animation styles when task is being moved
-          transform: isAnimating ? 'scale(1.02)' : 'scale(1)',
-          boxShadow: isAnimating ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none',
-          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          
+          // Simple shake animation styles
+          ...(isAnimating && {
+            animation: 'shakeX 0.8s ease-in-out',
+          }),
         }}
       >
         <Box 

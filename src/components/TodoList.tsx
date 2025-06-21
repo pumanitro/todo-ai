@@ -57,31 +57,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     });
   };
 
-  const findTasksToMoveToToday = (todoList: Todo[]): Todo[] => {
-    return todoList.filter(todo => 
-      !todo.completed && 
-      todo.category === 'postponed' && 
-      categorizeTodoByDueDate(todo.dueDate) === 'today'
-    );
-  };
 
-  const moveTasksToTodayCategory = async (tasksToMove: Todo[], todoList: Todo[]) => {
-    if (tasksToMove.length === 0) return;
-
-    const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
-    const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
-
-    // Move tasks to today category
-    const updatePromises = tasksToMove.map(async (task, index) => {
-      const todoRef = ref(database, `users/${user.uid}/todos/${task.id}`);
-      await update(todoRef, {
-        category: 'today',
-        order: minTodayOrder - 1 - index
-      });
-    });
-
-    await Promise.all(updatePromises);
-  };
 
   const showMovedTasksNotification = (tasksCount: number) => {
     const message = tasksCount === 1 
@@ -115,38 +91,95 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }, 1000); // Animation duration
   };
 
-  const handleFirebaseDataUpdate = async (snapshot: any) => {
-    const data = snapshot.val();
-    const todoList = transformFirebaseDataToTodos(data);
-    
-    // Handle auto-migration of postponed tasks that are now due today
-    const tasksToMove = findTasksToMoveToToday(todoList);
-    
-    if (tasksToMove.length > 0) {
-      await moveTasksToTodayCategory(tasksToMove, todoList);
-      showMovedTasksNotification(tasksToMove.length);
-    }
 
-    setTodos(todoList);
-    setIsConnected(true);
-  };
-
-  const handleFirebaseError = (error: any) => {
-    console.error('Firebase error:', error);
-    setIsConnected(false);
-  };
 
   useEffect(() => {
-    const todosRef = ref(database, `users/${user.uid}/todos`);
-    
-    const unsubscribe = onValue(
-      todosRef, 
-      handleFirebaseDataUpdate,
-      handleFirebaseError
-    );
+    // Helper functions moved inside useEffect to avoid dependency warnings
+    const findTasksToMoveToToday = (todoList: Todo[]): Todo[] => {
+      return todoList.filter(todo => 
+        !todo.completed && 
+        todo.category === 'postponed' && 
+        categorizeTodoByDueDate(todo.dueDate) === 'today'
+      );
+    };
 
-    return () => unsubscribe();
+    const moveTasksToTodayCategory = async (tasksToMove: Todo[], todoList: Todo[]) => {
+      if (tasksToMove.length === 0) return;
+
+      const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
+      const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+
+      // Move tasks to today category
+      const updatePromises = tasksToMove.map(async (task, index) => {
+        const todoRef = ref(database, `users/${user.uid}/todos/${task.id}`);
+        await update(todoRef, {
+          category: 'today',
+          order: minTodayOrder - 1 - index
+        });
+      });
+
+      await Promise.all(updatePromises);
+    };
+    
+    const handleSnapshot = async (snapshot: any) => {
+      const data = snapshot.val();
+      const todoList = transformFirebaseDataToTodos(data);
+      
+      // Handle auto-migration of postponed tasks that are now due today
+      const tasksToMove = findTasksToMoveToToday(todoList);
+      
+      if (tasksToMove.length > 0) {
+        // Start animation for tasks being moved
+        await animateTaskTransition(tasksToMove.map(task => task.id));
+        
+        // Update Firebase first
+        await moveTasksToTodayCategory(tasksToMove, todoList);
+        showMovedTasksNotification(tasksToMove.length);
+        
+        // Now create the updated todoList with the changes we just made
+        const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
+        const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
+        
+        const updatedTodoList = todoList.map(todo => {
+          const taskToMoveIndex = tasksToMove.findIndex(t => t.id === todo.id);
+          if (taskToMoveIndex >= 0) {
+            const updatedTodo = {
+              ...todo,
+              category: 'today' as const,
+              order: minTodayOrder - 1 - taskToMoveIndex
+            };
+            return updatedTodo;
+          }
+          return { ...todo }; // Create new object reference even for unchanged todos
+        });
+        
+        setTodos([...updatedTodoList]); // Force new array reference
+        setIsConnected(true);
+        return;
+      }
+
+      setTodos(todoList);
+      setIsConnected(true);
+    };
+
+    const handleError = (error: any) => {
+      console.error('Firebase error:', error);
+      setIsConnected(false);
+    };
+    
+    try {
+      const todosRef = ref(database, `users/${user.uid}/todos`);
+      const unsubscribe = onValue(todosRef, handleSnapshot, handleError);
+
+      return () => {
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error setting up Firebase listener:', error);
+    }
   }, [user.uid]);
+
+
 
   const categorizeTodoByDueDate = (dueDate?: string): 'today' | 'backlog' | 'postponed' => {
     if (!dueDate) return 'backlog';
@@ -605,6 +638,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   return (
     <Container maxWidth="md" sx={{ py: 2 }}>
       <UserHeader user={user} isConnected={isConnected} />
+
+
 
       {/* Today + Backlog Card - Main active tasks */}
       <Card sx={{ mb: 2 }}>

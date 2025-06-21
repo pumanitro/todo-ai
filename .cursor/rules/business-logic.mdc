@@ -44,6 +44,8 @@ alwaysApply: true
 - React state with real-time sync via `onValue()`
 - User authentication via Firebase Auth
 - **Auto-Migration**: On data load, postponed tasks due today automatically move to Today category with user notification
+- **State Sync Fix**: Auto-migration updates both Firebase and local state optimistically to prevent UI lag
+- **Auto-Migration Animation**: Tasks moving from postponed to today show simple shake animation and light blue border highlight
 
 ## Key Operations
 - **Add**: Auto-categorize by due date, `order = minCategoryOrder - 1`
@@ -54,9 +56,14 @@ alwaysApply: true
 
 ## Blocked Task Completion Flow
 - **Parent Completion**: When task with blocked children is completed → all children move to backlog
-- **Animation**: 1-second visual transition with scale, shadow, and color changes
+- **Animation**: 1-second visual transition with scale, shadow, and color changes for blocked task movements
 - **Relationship Cleanup**: Clear `blockedBy` references when moving children to backlog
 - **Notification**: Show user feedback about moved tasks with parent task name
+
+## Animation System
+- **Auto-Migration**: Simple shake animation with light blue border highlight for postponed→today moves
+- **Blocked Task Movement**: Scale and shadow transitions for blocked children moving to backlog
+- **Duration**: 0.8-second shake animation with ease-in-out easing
 
 ## UI Layout Structure
 - **Card 1**: Today + Backlog sections (main active tasks, primary focus) with nested blocked tasks
