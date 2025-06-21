@@ -8,6 +8,7 @@ import { User } from 'firebase/auth';
 import { Todo } from '../types/todo';
 import UserHeader from './todo/UserHeader';
 import AddTodoForm from './todo/AddTodoForm';
+import { triggerTaskCompletionFeedback } from '../utils/feedbackUtils';
 
 import NestedTodoSection from './todo/NestedTodoSection';
 import CompletedTodosSection from './todo/CompletedTodosSection';
@@ -315,6 +316,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       const newCompletedStatus = !completed;
       const currentTodo = todos.find(todo => todo.id === todoId);
       if (!currentTodo) return;
+
+      // Trigger feedback when completing a task (not when uncompleting)
+      if (newCompletedStatus) {
+        triggerTaskCompletionFeedback();
+      }
       
       // Find blocked children before completing the parent
       const blockedChildren = todos.filter(todo => todo.blockedBy === todoId && !todo.completed);

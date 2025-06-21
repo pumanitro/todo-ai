@@ -49,7 +49,7 @@ alwaysApply: true
 
 ## Key Operations
 - **Add**: Auto-categorize by due date, `order = minCategoryOrder - 1`
-- **Toggle**: Update completed status + reorder + category logic + **blocked children handling**
+- **Toggle**: Update completed status + reorder + category logic + **blocked children handling** + **audio/haptic feedback on completion**
 - **Drag**: Update category + calculate new order based on position (blocked tasks exempt)
 - **Edit**: Update text/description/dueDate/blockedBy + auto-recategorize on due date change
 - **Delete**: Remove from Firebase + close any open drawers + clear any blockedBy references
@@ -64,6 +64,12 @@ alwaysApply: true
 - **Auto-Migration**: Simple shake animation with light blue border highlight for postponed→today moves
 - **Blocked Task Movement**: Scale and shadow transitions for blocked children moving to backlog
 - **Duration**: 0.8-second shake animation with ease-in-out easing
+
+## Feedback System
+- **Audio Feedback**: Pleasant completion sound using task-completed.mp3 file with Web Audio API fallback
+- **Haptic Feedback**: Short-long-short vibration pattern on mobile devices
+- **Trigger**: Only when completing tasks (not when uncompleting)
+- **Fallback**: Graceful degradation on unsupported devices
 
 ## UI Layout Structure
 - **Card 1**: Today + Backlog sections (main active tasks, primary focus) with nested blocked tasks
