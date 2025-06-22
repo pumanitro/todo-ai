@@ -63,16 +63,38 @@ export const useTodos = (user: User): UseTodosReturn => {
       const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
       const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
 
-      // Move tasks to today category
-      const updates = tasksToMove.map((task, index) => ({
-        id: task.id,
-        updates: {
-          category: 'today' as const,
-          order: minTodayOrder - 1 - index
-        }
-      }));
+      // Collect all tasks to update (parents + their blocked children)
+      const allUpdates: Array<{ id: string; updates: any }> = [];
+      let orderOffset = 0;
 
-      await TodoService.updateMultipleTodos(user.uid, updates);
+      tasksToMove.forEach((parentTask) => {
+        // Add the parent task update
+        allUpdates.push({
+          id: parentTask.id,
+          updates: {
+            category: 'today' as const,
+            order: minTodayOrder - 1 - orderOffset
+          }
+        });
+        orderOffset++;
+
+        // Find and add blocked children
+        const blockedChildren = todoList.filter(todo => 
+          todo.blockedBy === parentTask.id && !todo.completed
+        );
+
+        blockedChildren.forEach((child, childIndex) => {
+          allUpdates.push({
+            id: child.id,
+            updates: {
+              category: 'today' as const,
+              order: minTodayOrder - 1 - orderOffset + 0.1 + (childIndex * 0.01) // Ensure children have slightly higher order values
+            }
+          });
+        });
+      });
+
+      await TodoService.updateMultipleTodos(user.uid, allUpdates);
     };
     const handleSnapshot = async (snapshot: any) => {
       const data = snapshot.val();
@@ -82,26 +104,77 @@ export const useTodos = (user: User): UseTodosReturn => {
       const tasksToMove = findTasksToMoveToToday(todoList);
       
       if (tasksToMove.length > 0) {
-        // Start animation for tasks being moved
-        await animateTaskTransition(tasksToMove.map(task => task.id));
+        // Collect all task IDs that will be animated (parents + blocked children)
+        const allTaskIdsToAnimate: string[] = [];
+        tasksToMove.forEach(parentTask => {
+          allTaskIdsToAnimate.push(parentTask.id);
+          
+          // Find blocked children of this parent
+          const blockedChildren = todoList.filter(todo => 
+            todo.blockedBy === parentTask.id && !todo.completed
+          );
+          blockedChildren.forEach(child => allTaskIdsToAnimate.push(child.id));
+        });
+        
+        // Start animation for all tasks being moved (parents + children)
+        await animateTaskTransition(allTaskIdsToAnimate);
         
         // Update Firebase first
         await moveTasksToTodayCategory(tasksToMove, todoList);
-        showMovedTasksNotification(tasksToMove.length);
+        
+        // Count total tasks moved (parents + children)
+        const totalTasksMoved = allTaskIdsToAnimate.length;
+        showMovedTasksNotification(totalTasksMoved);
         
         // Now create the updated todoList with the changes we just made
         const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
         const minTodayOrder = todayTodos.length > 0 ? Math.min(...todayTodos.map(t => t.order)) : 0;
         
+        // Collect all tasks that were moved (parents + their blocked children)
+        const allMovedTaskIds = new Set<string>();
+        let orderOffset = 0;
+        
+        tasksToMove.forEach((parentTask) => {
+          allMovedTaskIds.add(parentTask.id);
+          
+          // Find blocked children of this parent
+          const blockedChildren = todoList.filter(todo => 
+            todo.blockedBy === parentTask.id && !todo.completed
+          );
+          blockedChildren.forEach(child => allMovedTaskIds.add(child.id));
+        });
+        
         const updatedTodoList = todoList.map(todo => {
-          const taskToMoveIndex = tasksToMove.findIndex(t => t.id === todo.id);
-          if (taskToMoveIndex >= 0) {
-            const updatedTodo = {
-              ...todo,
-              category: 'today' as const,
-              order: minTodayOrder - 1 - taskToMoveIndex
-            };
-            return updatedTodo;
+          if (allMovedTaskIds.has(todo.id)) {
+            // Check if this is a parent task being moved
+            const taskToMoveIndex = tasksToMove.findIndex(t => t.id === todo.id);
+            if (taskToMoveIndex >= 0) {
+              // This is a parent task
+              const updatedTodo = {
+                ...todo,
+                category: 'today' as const,
+                order: minTodayOrder - 1 - taskToMoveIndex
+              };
+              return updatedTodo;
+            } else {
+              // This is a blocked child - find its parent
+              const parentTask = tasksToMove.find(parent => {
+                const blockedChildren = todoList.filter(t => t.blockedBy === parent.id && !t.completed);
+                return blockedChildren.some(child => child.id === todo.id);
+              });
+              
+              if (parentTask) {
+                const parentIndex = tasksToMove.findIndex(t => t.id === parentTask.id);
+                const blockedChildren = todoList.filter(t => t.blockedBy === parentTask.id && !t.completed);
+                const childIndex = blockedChildren.findIndex(child => child.id === todo.id);
+                
+                return {
+                  ...todo,
+                  category: 'today' as const,
+                  order: minTodayOrder - 1 - parentIndex + 0.1 + (childIndex * 0.01)
+                };
+              }
+            }
           }
           return { ...todo }; // Create new object reference even for unchanged todos
         });
