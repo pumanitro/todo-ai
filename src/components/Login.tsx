@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Button, 
@@ -12,7 +12,9 @@ import {
   Link,
   InputAdornment,
   IconButton,
-  Stack
+  Stack,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import { Google, Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
 import { 
@@ -21,6 +23,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   AuthError
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
@@ -33,14 +38,53 @@ const Login: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    const savedRememberMe = localStorage.getItem('rememberMe');
+    
+    if (savedRememberMe === 'true' && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+      if (savedPassword) {
+        setPassword(savedPassword);
+      }
+    }
+  }, []);
+
+  // Save credentials to localStorage
+  const saveCredentials = () => {
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', email);
+      localStorage.setItem('rememberedPassword', password);
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      clearSavedCredentials();
+    }
+  };
+
+  // Clear saved credentials from localStorage
+  const clearSavedCredentials = () => {
+    localStorage.removeItem('rememberedEmail');
+    localStorage.removeItem('rememberedPassword');
+    localStorage.removeItem('rememberMe');
+  };
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       setError('');
+      
+      // Set persistence based on remember me checkbox
+      const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log('User signed in:', result.user);
@@ -75,12 +119,21 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       
+      // Set persistence based on remember me checkbox
+      if (!isRegisterMode) {
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistence);
+      }
+      
       if (isRegisterMode) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         console.log('User registered:', result.user);
+        // Don't save credentials for registration
       } else {
         const result = await signInWithEmailAndPassword(auth, email, password);
         console.log('User signed in:', result.user);
+        // Save credentials if login successful
+        saveCredentials();
       }
     } catch (error: any) {
       console.error('Error with email auth:', error);
@@ -166,6 +219,14 @@ const Login: React.FC = () => {
     setSuccessMessage('');
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setRememberMe(true);
+  };
+
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    if (!checked) {
+      clearSavedCredentials();
+    }
   };
 
   const toggleMode = () => {
@@ -321,16 +382,20 @@ const Login: React.FC = () => {
 
               {!isRegisterMode && !isForgotPassword && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      id="remember-me" 
-                      style={{ marginRight: '8px' }}
-                    />
-                    <Typography variant="body2" color="text.secondary" component="label" htmlFor="remember-me" sx={{ cursor: 'pointer' }}>
-                      Remember me
-                    </Typography>
-                  </Box>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={rememberMe}
+                        onChange={(e) => handleRememberMeChange(e.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary">
+                        Remember me
+                      </Typography>
+                    }
+                  />
                   <Link 
                     component="button" 
                     variant="body2" 

@@ -51,6 +51,7 @@ alwaysApply: true
 - **Auth Error Handling**: Specific Firebase error codes handled with user-friendly messages
 - **Form Validation**: Client-side validation before Firebase auth calls
 - **Loading States**: UI disabled during authentication to prevent double submissions
+- **Remember Me**: Dual persistence - Firebase auth persistence (browserLocalPersistence vs browserSessionPersistence) + form field persistence (localStorage for email/password)
 
 ## Core Rules
 - New todos → auto-categorized by due date logic
