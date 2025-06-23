@@ -243,7 +243,9 @@ const Login: React.FC = () => {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Card sx={{ p: 4 }}>
+      <Card 
+        sx={{ p: 4 }}
+      >
         <CardContent>
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             {/* Logo with blue gradient */}
@@ -252,10 +254,7 @@ const Login: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 120,
-                height: 120,
                 borderRadius: '0%',
-
                 mb: 3
               }}
             >
