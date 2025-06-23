@@ -169,6 +169,6 @@ alwaysApply: true
 - **App Shortcuts**: Manifest defines quick actions for installed app
 
 ## PWA Cache Management
-- Cache version: `todo-ai-v25` (updated for animate.css animations)
+- Cache version: `todo-it-v25` (updated for animate.css animations)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes

@@ -1,4 +1,4 @@
-# Todo AI - Progressive Web App
+# TODO IT - Progressive Web App
 
 A powerful, intelligent todo app with smart categorization, task hierarchies, and seamless cross-device sync. Built as a modern PWA for optimal mobile and desktop experience.
 
@@ -48,7 +48,7 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 1. **Clone and install:**
    ```bash
    git clone <repository-url>
-   cd todo-ai
+   cd todo-it
    npm install
    ```
 
@@ -163,7 +163,7 @@ The app automatically prompts for installation on supported browsers. Once insta
 ### Authentication & Dashboard Access
 ```mermaid
 graph TD
-    A[Visit Todo AI] --> B{Authenticated?}
+    A[Visit TODO IT] --> B{Authenticated?}
     B -->|No| C[Sign in with Google]
     B -->|Yes| D[View Dashboard]
     C --> D
