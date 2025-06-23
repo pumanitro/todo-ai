@@ -1,6 +1,6 @@
 {
-  "short_name": "TODO IT",
-  "name": "TODO IT - Smart Task Manager",
+  "short_name": "todo-flow",
+  "name": "todo-flow - Smart Task Manager",
   "description": "A powerful, AI-enhanced todo app with task hierarchies, due dates, and smart categorization",
   "icons": [
     {

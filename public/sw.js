@@ -2,7 +2,7 @@
 
 /**
  * -----------------------------------------------------------
- * Service-worker for "TODO IT"
+ * Service-worker for "todo-flow"
  * -----------------------------------------------------------
  *  ✅   SPA-friendly: network-first for navigations, cache-first for static
  *  ✅   Precaches only files that exist in the production build
@@ -14,7 +14,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-it-v25';
+const CACHE_NAME = 'todo-flow-v25';
 
 /**
  * In production your build pipeline should replace

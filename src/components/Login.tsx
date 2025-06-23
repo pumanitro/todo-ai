@@ -29,7 +29,7 @@ const Login: React.FC = () => {
         <CardContent>
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Typography variant="h4" gutterBottom>
-              TODO IT
+              todo-flow
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Sign in to manage your tasks

@@ -1,4 +1,4 @@
-# TODO IT - Progressive Web App
+# todo-flow - Progressive Web App
 
 A powerful, intelligent todo app with smart categorization, task hierarchies, and seamless cross-device sync. Built as a modern PWA for optimal mobile and desktop experience.
 
@@ -48,7 +48,7 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 1. **Clone and install:**
    ```bash
    git clone <repository-url>
-   cd todo-it
+   cd todo-flow
    npm install
    ```
 
@@ -163,7 +163,7 @@ The app automatically prompts for installation on supported browsers. Once insta
 ### Authentication & Dashboard Access
 ```mermaid
 graph TD
-    A[Visit TODO IT] --> B{Authenticated?}
+    A[Visit todo-flow] --> B{Authenticated?}
     B -->|No| C[Sign in with Google]
     B -->|Yes| D[View Dashboard]
     C --> D

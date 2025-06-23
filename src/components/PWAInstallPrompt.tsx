@@ -107,7 +107,7 @@ const PWAInstallPrompt: React.FC = () => {
           </>
         }
       >
-        Install TODO IT for quick access to your tasks!
+        Install todo-flow for quick access to your tasks!
       </Alert>
     </Snackbar>
   );

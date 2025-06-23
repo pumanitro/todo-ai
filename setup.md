@@ -11,7 +11,7 @@ npm install
 
 2. **Create a new project:**
    - Click "Create a project"
-   - Enter project name (e.g., "todo-it-app")
+   - Enter project name (e.g., "todo-flow-app")
    - Continue through the setup
 
 3. **Enable Realtime Database:**
