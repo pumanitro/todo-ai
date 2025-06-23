@@ -14,6 +14,8 @@ interface UseTodoOperationsProps {
   todos: Todo[];
   animateTaskTransition: (taskIds: string[]) => Promise<void>;
   showBlockedTasksMovedNotification: (tasksCount: number, parentTaskName: string) => void;
+  addNewTaskId: (taskId: string) => void;
+  addCompletingTaskId: (taskId: string) => void;
 }
 
 export const useTodoOperations = ({
@@ -21,19 +23,24 @@ export const useTodoOperations = ({
   todos,
   animateTaskTransition,
   showBlockedTasksMovedNotification,
+  addNewTaskId,
+  addCompletingTaskId,
 }: UseTodoOperationsProps) => {
   const addTodo = async (text: string, dueDate?: string) => {
     try {
       const category = categorizeTodoByDueDate(dueDate);
       const minOrder = getMinOrderInCategory(todos, category);
       
-      await TodoService.addTodo(
+      const newTaskId = await TodoService.addTodo(
         user.uid,
         text,
         category,
         minOrder - 1,
         dueDate
       );
+      
+      // Track the new task for bounceIn animation
+      addNewTaskId(newTaskId);
     } catch (error) {
       console.error('Error adding todo:', error);
     }
@@ -112,6 +119,11 @@ export const useTodoOperations = ({
       // Trigger feedback when completing a task (not when uncompleting)
       if (newCompletedStatus) {
         triggerTaskCompletionFeedback();
+        // Add bounceOut animation for completing task
+        addCompletingTaskId(todoId);
+        
+        // Wait for animation to complete before updating Firebase
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
       // Find blocked children before completing the parent

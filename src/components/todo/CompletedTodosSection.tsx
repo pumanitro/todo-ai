@@ -9,13 +9,17 @@ interface CompletedTodosSectionProps {
   onToggleTodo: (todoId: string, completed: boolean) => void;
   onTodoClick: (todo: Todo) => void;
   animatingTaskIds?: Set<string>;
+  newTaskIds?: Set<string>;
+  completingTaskIds?: Set<string>;
 }
 
 const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({ 
   completedTodos, 
   onToggleTodo, 
   onTodoClick,
-  animatingTaskIds = new Set()
+  animatingTaskIds = new Set(),
+  newTaskIds = new Set(),
+  completingTaskIds = new Set(),
 }) => {
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
@@ -58,6 +62,8 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
               onClick={onTodoClick}
               isDraggable={false}
               isAnimating={animatingTaskIds.has(todo.id)}
+              isNewTask={newTaskIds.has(todo.id)}
+              isCompletingTask={completingTaskIds.has(todo.id)}
             />
           ))}
         </Box>

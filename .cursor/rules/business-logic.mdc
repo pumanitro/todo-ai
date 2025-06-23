@@ -94,7 +94,11 @@ alwaysApply: true
 ## Animation System
 - **Auto-Migration**: Simple shake animation with light blue border highlight for postponed→today moves
 - **Blocked Task Movement**: Scale and shadow transitions for blocked children moving to backlog
-- **Duration**: 0.8-second shake animation with ease-in-out easing
+- **Task Creation**: BounceIn animation using animate.css when new tasks are added via `addTodo`
+- **Task Completion**: BounceOut animation using animate.css when tasks are marked as completed
+- **Animation Tracking**: `newTaskIds` and `completingTaskIds` Sets in useTodos hook track animation states
+- **Duration**: 0.8-second shake animation with ease-in-out easing, 1-second timeout for animate.css animations
+- **Library**: animate.css for bounceIn/bounceOut effects with fallback for unsupported browsers
 
 ## Feedback System
 - **Audio Feedback**: Pleasant completion sound using task-completed.mp3 file with Web Audio API fallback
@@ -165,6 +169,6 @@ alwaysApply: true
 - **App Shortcuts**: Manifest defines quick actions for installed app
 
 ## PWA Cache Management
-- Cache version: `todo-ai-v24` (updated for auto-migration fix)
+- Cache version: `todo-ai-v25` (updated for animate.css animations)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes

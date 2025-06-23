@@ -16,6 +16,10 @@ interface UseTodosReturn {
   animatingTaskIds: Set<string>;
   movedTasksNotification: string;
   setMovedTasksNotification: (message: string) => void;
+  newTaskIds: Set<string>;
+  completingTaskIds: Set<string>;
+  addNewTaskId: (taskId: string) => void;
+  addCompletingTaskId: (taskId: string) => void;
 }
 
 export const useTodos = (user: User): UseTodosReturn => {
@@ -23,6 +27,8 @@ export const useTodos = (user: User): UseTodosReturn => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [movedTasksNotification, setMovedTasksNotification] = useState<string>('');
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
+  const [newTaskIds, setNewTaskIds] = useState<Set<string>>(new Set());
+  const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
 
   const showMovedTasksNotification = (tasksCount: number) => {
     const message = tasksCount === 1 
@@ -51,6 +57,30 @@ export const useTodos = (user: User): UseTodosReturn => {
       setAnimatingTaskIds(prev => {
         const newSet = new Set(prev);
         taskIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    }, 1000); // Animation duration
+  };
+
+  const addNewTaskId = (taskId: string) => {
+    setNewTaskIds(prev => new Set(prev).add(taskId));
+    // Remove from new task set after animation completes
+    setTimeout(() => {
+      setNewTaskIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }, 1000); // Animation duration
+  };
+
+  const addCompletingTaskId = (taskId: string) => {
+    setCompletingTaskIds(prev => new Set(prev).add(taskId));
+    // Remove from completing task set after animation completes
+    setTimeout(() => {
+      setCompletingTaskIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
         return newSet;
       });
     }, 1000); // Animation duration
@@ -132,7 +162,6 @@ export const useTodos = (user: User): UseTodosReturn => {
         
         // Collect all tasks that were moved (parents + their blocked children)
         const allMovedTaskIds = new Set<string>();
-        let orderOffset = 0;
         
         tasksToMove.forEach((parentTask) => {
           allMovedTaskIds.add(parentTask.id);
@@ -210,5 +239,9 @@ export const useTodos = (user: User): UseTodosReturn => {
     animatingTaskIds,
     movedTasksNotification,
     setMovedTasksNotification,
+    newTaskIds,
+    completingTaskIds,
+    addNewTaskId,
+    addCompletingTaskId,
   };
 }; 

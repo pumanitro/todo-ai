@@ -9,7 +9,7 @@ export class TodoService {
     category: 'today' | 'backlog' | 'postponed',
     order: number,
     dueDate?: string
-  ): Promise<void> {
+  ): Promise<string> {
     try {
       const todosRef = ref(database, `users/${userId}/todos`);
       const newTodo = {
@@ -21,7 +21,8 @@ export class TodoService {
         ...(dueDate && { dueDate }),
       };
       
-      await push(todosRef, newTodo);
+      const newTodoRef = await push(todosRef, newTodo);
+      return newTodoRef.key!; // Return the generated ID
     } catch (error) {
       console.error('Error adding todo:', error);
       throw error;

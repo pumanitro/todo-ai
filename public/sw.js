@@ -2,7 +2,7 @@
 
 /**
  * -----------------------------------------------------------
- * Service-worker for “Todo AI”
+ * Service-worker for "Todo AI"
  * -----------------------------------------------------------
  *  ✅   SPA-friendly: network-first for navigations, cache-first for static
  *  ✅   Precaches only files that exist in the production build
@@ -14,7 +14,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-ai-v24';
+const CACHE_NAME = 'todo-ai-v25';
 
 /**
  * In production your build pipeline should replace
@@ -75,7 +75,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => caches.match('/')) // offline fallback
     );
-    return; // ⬅ don’t fall through
+    return; // ⬅ don't fall through
   }
 
   /* ---------- 2. Pre-cached static assets ------------------ */
@@ -125,6 +125,6 @@ self.addEventListener('sync', (event) => {
 });
 
 function doBackgroundSync() {
-  // Expand this to replay queued “todo” actions, etc.
+  // Expand this to replay queued "todo" actions, etc.
   console.log('[SW] Background sync triggered');
 }

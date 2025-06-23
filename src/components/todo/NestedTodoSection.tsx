@@ -12,6 +12,8 @@ interface NestedTodoSectionProps {
   onTodoClick: (todo: Todo) => void;
   animatingTaskIds?: Set<string>;
   shouldHighlightDrop?: boolean;
+  newTaskIds?: Set<string>;
+  completingTaskIds?: Set<string>;
 }
 
 interface TodoHierarchy {
@@ -26,7 +28,9 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   onToggleTodo, 
   onTodoClick,
   animatingTaskIds = new Set(),
-  shouldHighlightDrop = false
+  shouldHighlightDrop = false,
+  newTaskIds = new Set(),
+  completingTaskIds = new Set(),
 }) => {
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
@@ -120,6 +124,8 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
           onClick={onTodoClick}
           isDraggable={true}
           isAnimating={animatingTaskIds.has(todo.id)}
+          isNewTask={newTaskIds.has(todo.id)}
+          isCompletingTask={completingTaskIds.has(todo.id)}
           blockedChildren={children || []}
         />
       </Box>
@@ -163,6 +169,8 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
                 onClick={onTodoClick}
                 isDraggable={false}
                 isAnimating={animatingTaskIds.has(child.id)}
+                isNewTask={newTaskIds.has(child.id)}
+                isCompletingTask={completingTaskIds.has(child.id)}
               />
             </Box>
           ))}

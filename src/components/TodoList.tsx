@@ -42,6 +42,10 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     movedTasksNotification,
     setMovedTasksNotification,
     showBlockedTasksMovedNotification,
+    newTaskIds,
+    completingTaskIds,
+    addNewTaskId,
+    addCompletingTaskId,
   } = useTodos(user);
 
   const { addTodo, deleteTodo, handleSaveEdit, toggleTodo, handleDragEnd } = useTodoOperations({
@@ -49,6 +53,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     todos,
     animateTaskTransition,
     showBlockedTasksMovedNotification,
+    addNewTaskId,
+    addCompletingTaskId,
   });
 
   const handleTodoClick = (todo: Todo) => {
@@ -106,6 +112,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isDraggable={false}
               hideDueDate={true}
               isAnimating={animatingTaskIds.has(todo.id)}
+              isNewTask={newTaskIds.has(todo.id)}
+              isCompletingTask={completingTaskIds.has(todo.id)}
             />
           </Box>
           
@@ -149,6 +157,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isDraggable={false}
                     hideDueDate={true}
                     isAnimating={animatingTaskIds.has(child.id)}
+                    isNewTask={newTaskIds.has(child.id)}
+                    isCompletingTask={completingTaskIds.has(child.id)}
                   />
                 </Box>
               ))}
@@ -210,6 +220,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               onToggleTodo={toggleTodo}
               onTodoClick={handleTodoClick}
               animatingTaskIds={animatingTaskIds}
+              newTaskIds={newTaskIds}
+              completingTaskIds={completingTaskIds}
               shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
             />
 
@@ -229,6 +241,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 onToggleTodo={toggleTodo}
                 onTodoClick={handleTodoClick}
                 animatingTaskIds={animatingTaskIds}
+                newTaskIds={newTaskIds}
+                completingTaskIds={completingTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
               />
             </Box>
@@ -295,6 +309,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             onToggleTodo={toggleTodo}
             onTodoClick={handleTodoClick}
             animatingTaskIds={animatingTaskIds}
+            newTaskIds={newTaskIds}
+            completingTaskIds={completingTaskIds}
           />
         </Box>
       )}

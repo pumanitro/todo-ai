@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
+import 'animate.css';
 import { theme } from './theme/theme';
 import { auth } from './firebase/config';
 import { onAuthStateChanged, User } from 'firebase/auth';
