@@ -69,7 +69,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         {...(provided?.dragHandleProps || {})}
         button
         onClick={() => onClick(todo)}
-        className={`${isNewTask ? 'animate__animated animate__bounceIn' : ''} ${isCompletingTask ? 'animate__animated animate__bounceOut' : ''}`}
+        className={`${isNewTask ? 'animate__animated animate__backInDown' : ''} ${isCompletingTask ? 'animate__animated animate__backOutDown' : ''}`}
         sx={{ 
           cursor: isDraggable ? (snapshot?.isDragging ? 'grabbing' : 'grab') : 'pointer',
           backgroundColor: snapshot?.isDragging ? 'action.hover' : 'transparent',
