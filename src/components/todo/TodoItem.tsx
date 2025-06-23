@@ -69,7 +69,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         {...(provided?.dragHandleProps || {})}
         button
         onClick={() => onClick(todo)}
-        className={`${isNewTask ? 'animate__animated animate__backInDown' : ''} ${isCompletingTask ? 'animate__animated animate__backOutDown' : ''}`}
+        className={`${isNewTask ? 'animate__animated animate__bounceIn' : ''} ${isCompletingTask ? 'animate__animated animate__backOutDown' : ''}`}
         sx={{ 
           cursor: isDraggable ? (snapshot?.isDragging ? 'grabbing' : 'grab') : 'pointer',
           backgroundColor: snapshot?.isDragging ? 'action.hover' : 'transparent',
@@ -98,7 +98,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           sx={{ display: 'flex', alignItems: 'center', mr: 1 }}
         >
           <Checkbox
-            checked={todo.completed}
+            checked={todo.completed || isCompletingTask}
             onChange={() => onToggle(todo.id, todo.completed)}
             icon={<RadioButtonUnchecked />}
             checkedIcon={<CheckCircle />}
@@ -115,7 +115,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
               overflowWrap: 'break-word',
               hyphens: 'auto',
               lineHeight: 1.3,
-              ...(todo.completed ? { 
+              ...(todo.completed || isCompletingTask ? { 
                 textDecoration: 'line-through',
               } : {})
             }}
