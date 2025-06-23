@@ -1,152 +1,73 @@
 # Todo AI - Progressive Web App
 
-A powerful, AI-enhanced todo app with task hierarchies, due dates, and smart categorization. Now available as a downloadable PWA!
+A powerful, intelligent todo app with smart categorization, task hierarchies, and seamless cross-device sync. Built as a modern PWA for optimal mobile and desktop experience.
 
-## Features
+## ✨ Key Features
 
-- ✅ **Task Management**: Create, edit, and organize your tasks
-- 📅 **Smart Due Dates**: Automatic categorization based on due dates
-- 🔗 **Task Dependencies**: Block tasks based on other tasks
-- 📱 **Mobile-First**: Responsive design with mobile FAB
-- 🔄 **Real-time Sync**: Firebase integration for cross-device sync
-- 📲 **PWA Ready**: Downloadable app with offline capabilities
-- 🎨 **Material Design**: Beautiful, modern UI
+### Smart Task Management
+- **Auto-Categorization**: Tasks automatically organized into Today, Backlog, and Postponed based on due dates
+- **Task Dependencies**: Create hierarchical task relationships with blocking dependencies
+- **Drag & Drop**: Intuitive reordering with automatic category updates
+- **Rich Descriptions**: Support for detailed task descriptions with clickable links
 
-## PWA Features
+### Intelligent Organization
+- **Today**: Overdue and today's tasks with their dependent subtasks
+- **Backlog**: Tasks without due dates and their blocked children
+- **Postponed**: Future-dated tasks grouped by date (collapsible)
+- **Auto-Migration**: Postponed tasks automatically move to Today when due
 
-- **Downloadable**: Install directly to your device
-- **Offline Support**: Service worker for offline functionality
-- **App-like Experience**: Standalone display mode
-- **Push Notifications**: (Future feature)
+### Mobile-First Design
+- **Responsive UI**: Optimized for both mobile and desktop
+- **Floating Action Button**: Quick task creation on mobile devices
+- **Bottom Drawer**: Swipeable task creation interface
+- **Touch-Friendly**: Material Design with intuitive gestures
 
-## Getting Started
+### Progressive Web App
+- **Installable**: Add to home screen like a native app
+- **Offline Support**: Works without internet connection
+- **Background Sync**: Automatic synchronization when online
+- **App-like Experience**: Standalone mode without browser UI
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up Firebase configuration
-4. Run: `npm start`
+### Enhanced UX
+- **Real-time Sync**: Instant updates across all devices
+- **Audio Feedback**: Pleasant completion sounds
+- **Haptic Feedback**: Tactile responses on mobile devices
+- **Smooth Animations**: Contextual animations for task state changes
+- **Visual Hierarchy**: Clear organization with nested task display
 
-## PWA Setup
+## 🚀 Getting Started
 
-### Creating Icons
+### For Users
+1. Visit the app URL in your browser
+2. Sign in with your Google account
+3. Install the PWA when prompted for the best experience
+4. Start creating and organizing your tasks!
 
-The app uses placeholder icons. To create proper PWA icons:
+### For Developers
 
-1. **Option 1: Use an online generator**
-   - Visit [PWA Asset Generator](https://www.pwabuilder.com/imageGenerator)
-   - Upload your logo/icon
-   - Generate and download icons
-   - Replace `public/icon-192.png` and `public/icon-512.png`
-
-2. **Option 2: Manual creation**
-   - Create two PNG files:
-     - `icon-192.png` (192x192 pixels)
-     - `icon-512.png` (512x512 pixels)
-   - Use your app logo with proper Material Design guidelines
-   - Place in the `public/` directory
-
-3. **Option 3: Use the generator script**
+1. **Clone and install:**
    ```bash
-   npm install canvas
-   node scripts/generate-icons.js
-   ```
-
-### Installing the PWA
-
-1. Open the app in a supported browser (Chrome, Edge, Firefox)
-2. Look for the install prompt or "Add to Home Screen" option
-3. Click "Install" when prompted
-4. The app will be available on your device like a native app
-
-### Browser Support
-
-- ✅ Chrome/Chromium (full support)
-- ✅ Edge (full support)
-- ✅ Firefox (partial support)
-- ✅ Safari (partial support)
-
-## Development
-
-```bash
-npm start        # Start development server
-npm run build    # Build for production
-npm test         # Run tests
-```
-
-## Business Logic
-
-See `.cursor/rules/business-logic.md` for detailed business rules and data models.
-
-## Technologies
-
-- React 18 + TypeScript
-- Material-UI v5
-- Firebase (Auth + Realtime Database)
-- Hello Pangea DnD (drag & drop)
-- Service Worker + Web App Manifest
-
-## License
-
-MIT License
-
-## 🚀 Features
-
-- **React 18** with TypeScript for type safety
-- **Firebase Real-time Database** for live data synchronization
-- **Material UI** for beautiful, accessible components
-- **Real-time messaging** with instant updates
-- **CRUD operations** (Create, Read, Delete)
-- **Responsive design** that works on all devices
-
-## 🛠️ Tech Stack
-
-- React 18
-- TypeScript
-- Firebase (Real-time Database)
-- Material UI
-- React Scripts
-
-## 📦 Installation
-
-1. **Clone and install dependencies:**
-   ```bash
+   git clone <repository-url>
+   cd todo-ai
    npm install
    ```
 
-2. **Setup Firebase:**
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Create a new project
-   - Enable **Real-time Database**
-   - Copy your Firebase configuration
-   - Replace the placeholder config in `src/firebase/config.ts`
+2. **Firebase Setup:**
+   - Create a Firebase project with Authentication and Realtime Database
+   - Update `src/firebase/config.ts` with your configuration
+   - Configure database rules for user isolation
 
-3. **Update Firebase Configuration:**
-   ```typescript
-   // src/firebase/config.ts
-   const firebaseConfig = {
-     apiKey: "your-actual-api-key",
-     authDomain: "your-project-id.firebaseapp.com",
-     databaseURL: "https://your-project-id-default-rtdb.firebaseio.com/",
-     projectId: "your-project-id",
-     storageBucket: "your-project-id.appspot.com",
-     messagingSenderId: "your-sender-id",
-     appId: "your-app-id"
-   };
+3. **Run locally:**
+   ```bash
+   npm start
    ```
 
-4. **Firebase Security Rules (for development):**
-   ```json
-   {
-     "rules": {
-       ".read": true,
-       ".write": true
-     }
-   }
-   ```
-
-## 🏃‍♂️ Running the App
+## 🏃‍♂️ Build & Development
 
 ```bash
+# Install dependencies
+npm install
+
 # Start development server
 npm start
 
@@ -155,55 +76,122 @@ npm run build
 
 # Run tests
 npm test
+
+# Serve production build locally
+npx serve -s build
 ```
 
-The app will open at [http://localhost:3000](http://localhost:3000)
+### Development Notes
+- App runs on `http://localhost:3000` by default
+- Hot reload enabled for development
+- Service worker only active in production builds
+- Firebase configuration required for full functionality
 
 ## 📁 Project Structure
 
 ```
 src/
 ├── components/
-│   └── HelloWorld.tsx     # Main demo component
+│   ├── Login.tsx                    # Authentication component
+│   ├── PWAInstallPrompt.tsx         # PWA installation handler
+│   ├── TodoList.tsx                 # Main todo orchestration
+│   └── todo/
+│       ├── AddTodoForm.tsx          # Task creation form
+│       ├── CompletedTodosSection.tsx # Completed tasks display
+│       ├── NestedTodoSection.tsx    # Hierarchical task rendering
+│       ├── TodoDetailsDrawer.tsx    # Task editing drawer
+│       ├── TodoItem.tsx             # Individual task component
+│       ├── TodoSection.tsx          # Category sections
+│       └── UserHeader.tsx           # User info display
+├── hooks/
+│   ├── useTodos.ts                  # State management & auto-migration
+│   └── useTodoOperations.ts         # CRUD operations & drag-drop
+├── services/
+│   └── todoService.ts               # Firebase operations layer
+├── utils/
+│   ├── todoUtils.ts                 # Business logic & categorization
+│   ├── dateUtils.ts                 # Date formatting functions
+│   ├── feedbackUtils.ts             # Audio & haptic feedback
+│   └── linkUtils.tsx                # URL detection & rendering
+├── types/
+│   └── todo.ts                      # TypeScript interfaces
 ├── firebase/
-│   └── config.ts          # Firebase configuration
+│   └── config.ts                    # Firebase configuration
 ├── theme/
-│   └── theme.ts           # Material UI theme
-├── App.tsx                # Main app component
-└── index.tsx              # Entry point
+│   └── theme.ts                     # Material-UI theme
+├── App.tsx                          # Root application component
+└── index.tsx                        # Application entry point
+
+public/
+├── manifest.json                    # PWA manifest
+├── sw.js                           # Service worker
+├── sounds/
+│   └── task-completed.mp3          # Completion sound
+└── icon-*.svg                      # PWA icons
 ```
 
-## 🎯 What's Included
+## 🛠️ Tech Stack
 
-- ✅ **Real-time messaging** - Add/delete messages with live updates
-- ✅ **Material UI components** - Cards, buttons, text fields, lists
-- ✅ **TypeScript interfaces** - Type-safe data structures
-- ✅ **Firebase integration** - Real-time database operations
-- ✅ **Responsive design** - Works on mobile and desktop
-- ✅ **Error handling** - Proper error states and logging
+- **Frontend**: React 18 + TypeScript
+- **UI Framework**: Material-UI v5 (MUI)
+- **Backend**: Firebase Authentication + Realtime Database
+- **State Management**: Custom hooks with real-time synchronization
+- **Drag & Drop**: Hello Pangea DnD (@hello-pangea/dnd)
+- **PWA**: Service Worker + Web App Manifest
+- **Animations**: Animate.css + custom CSS animations
+- **Audio**: Web Audio API for completion sounds
+- **Build Tool**: Create React App
 
-## 🔧 Next Steps
+## 🏗️ Architecture
 
-1. **Authentication** - Add Firebase Auth for user management
-2. **Routing** - Add React Router for multiple pages
-3. **State Management** - Consider Redux/Context for complex state
-4. **Testing** - Add comprehensive unit and integration tests
-5. **Deployment** - Deploy to Firebase Hosting or Vercel
+- **Services Layer**: Centralized Firebase operations (TodoService)
+- **Custom Hooks**: State management (useTodos) and operations (useTodoOperations)  
+- **Utilities**: Business logic, date formatting, feedback, and link handling
+- **Components**: UI-focused components with delegated business logic
+- **Real-time Sync**: Firebase listeners for cross-device synchronization
 
-## 🚨 Important Notes
+## 📱 PWA Installation
 
-- Replace the Firebase configuration with your actual project settings
-- Update Firebase security rules for production
-- The current setup is for development purposes
+The app automatically prompts for installation on supported browsers. Once installed:
+- Launch from home screen like a native app
+- Works offline with cached data
+- Receives background updates
+- Integrates with device notifications (future)
 
-## User prompt for cursor:
-Everytime you add new functionality update business-logic.mdc file that is in /.cursor/rules. Keep it small, condence, only with essential knowledge.
+## 🔧 Core Concepts
 
-## 📚 Learn More
+### Task Categories
+- **Today**: Due today or overdue tasks
+- **Backlog**: Tasks without specific due dates
+- **Postponed**: Future-dated tasks
 
-- [React Documentation](https://reactjs.org/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Material UI Documentation](https://mui.com/)
+### Task Dependencies
+- Tasks can be blocked by other tasks
+- Blocked tasks appear nested under their parent
+- Completing a parent moves blocked children to backlog
+- Dragging a parent automatically moves all blocked children
 
-Happy coding! 🎉 
+### Data Model
+```typescript
+Todo {
+  id: string
+  text: string
+  completed: boolean
+  category: 'today' | 'backlog' | 'postponed'
+  dueDate?: string  // ISO date format
+  description?: string
+  blockedBy?: string  // ID of blocking task
+  order: number
+  timestamp: number
+}
+```
+
+## 🔒 Security
+
+- User authentication required for all operations
+- Data isolation per user account
+- Secure Firebase rules prevent cross-user access
+
+## 📄 License
+
+MIT License 
