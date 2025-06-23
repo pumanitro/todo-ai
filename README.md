@@ -158,6 +158,91 @@ The app automatically prompts for installation on supported browsers. Once insta
 - Receives background updates
 - Integrates with device notifications (future)
 
+## 🔄 User Flow Diagrams
+
+### Authentication & Dashboard Access
+```mermaid
+graph TD
+    A[Visit Todo AI] --> B{Authenticated?}
+    B -->|No| C[Sign in with Google]
+    B -->|Yes| D[View Dashboard]
+    C --> D
+    
+    D --> E[Today Tasks]
+    D --> F[Backlog Tasks] 
+    D --> G[Postponed Tasks]
+    D --> H[Completed Tasks]
+```
+
+### Task Creation Flow
+```mermaid
+graph TD
+    A[Click Add Task] --> B[Enter Task Details]
+    B --> C{Set Due Date?}
+    C -->|No| D[Auto-categorize to Backlog]
+    C -->|Yes| E{Due Date Logic}
+    
+    E -->|Today/Overdue| F[Move to Today]
+    E -->|Future Date| G[Move to Postponed]
+    
+    D --> H[Task Created in Backlog]
+    F --> I[Task Created in Today]
+    G --> J[Task Created in Postponed]
+```
+
+### Task Management Operations
+```mermaid
+graph TD
+    A[Select Task] --> B{Action Type}
+    B -->|Edit| C[Open Details Drawer]
+    B -->|Toggle Complete| D{Has Blocked Children?}
+    B -->|Drag & Drop| E[Change Category/Order]
+    B -->|Delete| F[Remove Task & Clear References]
+    
+    C --> G[Edit Text/Description/Due Date]
+    G --> H[Auto-recategorize if needed]
+    
+    D -->|Yes| I[Complete Parent + Move Children to Backlog]
+    D -->|No| J[Simple Toggle Complete]
+    
+    E --> K{Dragging Parent?}
+    K -->|Yes| L[Move Parent + All Blocked Children]
+    K -->|No| M[Move Single Task]
+```
+
+### Task Dependencies & Hierarchy
+```mermaid
+graph TD
+    A[Open Task Details] --> B[Set "Blocked By" Field]
+    B --> C{Select Parent Task}
+    C --> D[Create Hierarchy Relationship]
+    D --> E[Blocked Task Inherits Parent Category]
+    E --> F[Display Nested Under Parent]
+    
+    G[Complete Parent Task] --> H[Move All Blocked Children to Backlog]
+    H --> I[Clear Blocked By References]
+    I --> J[Show Notification to User]
+```
+
+### PWA Installation & Mobile Experience
+```mermaid
+graph TD
+    A[Access App] --> B{Device Type}
+    B -->|Mobile| C[Show Floating Action Button]
+    B -->|Desktop| D[Show Add Task Form]
+    
+    C --> E[Tap FAB] --> F[Open Bottom Drawer]
+    F --> G[Add Task via Mobile Interface]
+    
+    A --> H{Install Prompt Available?}
+    H -->|Yes| I[Show Install Banner]
+    H -->|No| J[Continue in Browser]
+    
+    I --> K[Click Install]
+    K --> L[Add to Home Screen]
+    L --> M[Launch as Standalone App]
+```
+
 ## 🔧 Core Concepts
 
 ### Task Categories
