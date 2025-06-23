@@ -213,7 +213,7 @@ graph TD
 ### Task Dependencies & Hierarchy
 ```mermaid
 graph TD
-    A[Open Task Details] --> B[Set "Blocked By" Field]
+    A[Open Task Details] --> B[Set Blocked By Field]
     B --> C{Select Parent Task}
     C --> D[Create Hierarchy Relationship]
     D --> E[Blocked Task Inherits Parent Category]
