@@ -42,9 +42,15 @@ alwaysApply: true
 - **Due Date**: ISO date string (YYYY-MM-DD), optional field
 - **Blocked By**: Task ID that this task is blocked by, creates hierarchical nesting
 
-## Security
+## Security & Authentication
 - **Authentication**: Required for all database operations (`auth != null`)
 - **User Isolation**: Users can only access their own data (`$uid === auth.uid`)
+- **Dual Auth Methods**: Google OAuth and Email/Password authentication supported
+- **Email Auth**: Registration with email validation, password strength requirements (min 6 chars)
+- **Password Reset**: Forgot password functionality with email-based reset links
+- **Auth Error Handling**: Specific Firebase error codes handled with user-friendly messages
+- **Form Validation**: Client-side validation before Firebase auth calls
+- **Loading States**: UI disabled during authentication to prevent double submissions
 
 ## Core Rules
 - New todos → auto-categorized by due date logic
@@ -163,12 +169,14 @@ alwaysApply: true
 - **Web App Manifest**: `public/manifest.json` defines app metadata and behavior
 - **Installation**: PWAInstallPrompt component handles browser install prompts
 - **Offline Support**: Cached resources allow basic functionality without network
-- **App Icons**: 192x192 and 512x512 PNG icons for various devices
+- **App Icons**: 192x192 and 512x512 PNG icons for various devices and platforms
 - **Standalone Mode**: App runs without browser UI when installed
 - **Theme Integration**: PWA theme colors match Material-UI theme
 - **App Shortcuts**: Manifest defines quick actions for installed app
+- **SEO Optimized**: Comprehensive meta tags, Open Graph, and Twitter Card support
+- **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v25` (updated for animate.css animations)
+- Cache version: `todo-flow-v28` (updated for PWA branding and SEO)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes
