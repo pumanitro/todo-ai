@@ -16,9 +16,10 @@ interface TodoItemProps {
   blockedChildren?: Todo[];
   isNewTask?: boolean;
   isCompletingTask?: boolean;
+  isUncompletingTask?: boolean;
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false, isAnimating = false, blockedChildren = [], isNewTask = false, isCompletingTask = false }) => {
+const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false, isAnimating = false, blockedChildren = [], isNewTask = false, isCompletingTask = false, isUncompletingTask = false }) => {
   const getDueDateDisplay = (dueDate: string) => {
     const today = new Date().toISOString().split('T')[0];
     const due = new Date(dueDate);
@@ -69,7 +70,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
         {...(provided?.dragHandleProps || {})}
         button
         onClick={() => onClick(todo)}
-        className={`${isNewTask ? 'animate__animated animate__bounceIn' : ''} ${isCompletingTask ? 'animate__animated animate__backOutDown' : ''}`}
+        className={`${isNewTask ? 'animate__animated animate__bounceIn' : ''} ${isCompletingTask ? 'animate__animated animate__backOutDown' : ''} ${isUncompletingTask ? 'animate__animated animate__backOutUp' : ''}`}
         sx={{ 
           cursor: isDraggable ? (snapshot?.isDragging ? 'grabbing' : 'grab') : 'pointer',
           backgroundColor: snapshot?.isDragging ? 'action.hover' : 'transparent',

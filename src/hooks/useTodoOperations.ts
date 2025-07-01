@@ -1,7 +1,7 @@
 import { User } from 'firebase/auth';
 import { Todo } from '../types/todo';
 import { TodoService } from '../services/todoService';
-import { triggerTaskCompletionFeedback } from '../utils/feedbackUtils';
+import { triggerTaskCompletionFeedback, triggerTaskUncompletionFeedback } from '../utils/feedbackUtils';
 import { 
   categorizeTodoByDueDate, 
   getMinOrderInCategory, 
@@ -16,6 +16,7 @@ interface UseTodoOperationsProps {
   showBlockedTasksMovedNotification: (tasksCount: number, parentTaskName: string) => void;
   addNewTaskId: (taskId: string) => void;
   addCompletingTaskId: (taskId: string) => void;
+  addUncompletingTaskId: (taskId: string) => void;
 }
 
 export const useTodoOperations = ({
@@ -25,6 +26,7 @@ export const useTodoOperations = ({
   showBlockedTasksMovedNotification,
   addNewTaskId,
   addCompletingTaskId,
+  addUncompletingTaskId,
 }: UseTodoOperationsProps) => {
   const addTodo = async (text: string, dueDate?: string) => {
     try {
@@ -116,11 +118,19 @@ export const useTodoOperations = ({
       const currentTodo = todos.find(todo => todo.id === todoId);
       if (!currentTodo) return;
 
-      // Trigger feedback when completing a task (not when uncompleting)
       if (newCompletedStatus) {
+        // Trigger feedback when completing a task (not when uncompleting)
         triggerTaskCompletionFeedback();
         // Add bounceOut animation for completing task
         addCompletingTaskId(todoId);
+        
+        // Wait for animation to complete before updating Firebase
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        // Trigger reverse feedback when uncompleting a task
+        triggerTaskUncompletionFeedback();
+        // Add backOutUp animation for uncompleting task
+        addUncompletingTaskId(todoId);
         
         // Wait for animation to complete before updating Firebase
         await new Promise(resolve => setTimeout(resolve, 1000));

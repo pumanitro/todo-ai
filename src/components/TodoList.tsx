@@ -44,8 +44,10 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     showBlockedTasksMovedNotification,
     newTaskIds,
     completingTaskIds,
+    uncompletingTaskIds,
     addNewTaskId,
     addCompletingTaskId,
+    addUncompletingTaskId,
   } = useTodos(user);
 
   const { addTodo, deleteTodo, handleSaveEdit, toggleTodo, handleDragEnd } = useTodoOperations({
@@ -55,6 +57,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     showBlockedTasksMovedNotification,
     addNewTaskId,
     addCompletingTaskId,
+    addUncompletingTaskId,
   });
 
   const handleTodoClick = (todo: Todo) => {
@@ -114,6 +117,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isAnimating={animatingTaskIds.has(todo.id)}
               isNewTask={newTaskIds.has(todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
+              isUncompletingTask={uncompletingTaskIds.has(todo.id)}
             />
           </Box>
           
@@ -134,21 +138,24 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               />
               
               {children.map((child, childIndex) => (
-                <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
-                  {/* Horizontal connector line */}
-                  <Box 
-                    sx={{ 
+                <Box 
+                  key={child.id} 
+                  sx={{ 
+                    ml: 0, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    '&:before': {
+                      content: '""',
                       position: 'absolute',
                       left: -12,
                       top: '50%',
-                      width: 12,
-                      height: 2,
+                      width: 8,
+                      height: 1,
                       backgroundColor: 'divider',
-                      opacity: 0.5,
-                      transform: 'translateY(-50%)'
-                    }} 
-                  />
-                  
+                      opacity: 0.5
+                    }
+                  }}
+                >
                   <TodoItem
                     todo={child}
                     index={childIndex}
@@ -159,6 +166,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isAnimating={animatingTaskIds.has(child.id)}
                     isNewTask={newTaskIds.has(child.id)}
                     isCompletingTask={completingTaskIds.has(child.id)}
+                    isUncompletingTask={uncompletingTaskIds.has(child.id)}
                   />
                 </Box>
               ))}
@@ -222,6 +230,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               animatingTaskIds={animatingTaskIds}
               newTaskIds={newTaskIds}
               completingTaskIds={completingTaskIds}
+              uncompletingTaskIds={uncompletingTaskIds}
               shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
             />
 
@@ -243,6 +252,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 animatingTaskIds={animatingTaskIds}
                 newTaskIds={newTaskIds}
                 completingTaskIds={completingTaskIds}
+                uncompletingTaskIds={uncompletingTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
               />
             </Box>
@@ -311,6 +321,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             animatingTaskIds={animatingTaskIds}
             newTaskIds={newTaskIds}
             completingTaskIds={completingTaskIds}
+            uncompletingTaskIds={uncompletingTaskIds}
           />
         </Box>
       )}

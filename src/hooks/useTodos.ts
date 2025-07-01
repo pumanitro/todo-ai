@@ -18,8 +18,10 @@ interface UseTodosReturn {
   setMovedTasksNotification: (message: string) => void;
   newTaskIds: Set<string>;
   completingTaskIds: Set<string>;
+  uncompletingTaskIds: Set<string>;
   addNewTaskId: (taskId: string) => void;
   addCompletingTaskId: (taskId: string) => void;
+  addUncompletingTaskId: (taskId: string) => void;
 }
 
 export const useTodos = (user: User): UseTodosReturn => {
@@ -29,6 +31,7 @@ export const useTodos = (user: User): UseTodosReturn => {
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
   const [newTaskIds, setNewTaskIds] = useState<Set<string>>(new Set());
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
+  const [uncompletingTaskIds, setUncompletingTaskIds] = useState<Set<string>>(new Set());
 
   const showMovedTasksNotification = (tasksCount: number) => {
     const message = tasksCount === 1 
@@ -79,6 +82,18 @@ export const useTodos = (user: User): UseTodosReturn => {
     // Remove from completing task set after animation completes
     setTimeout(() => {
       setCompletingTaskIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }, 1000); // Animation duration
+  };
+
+  const addUncompletingTaskId = (taskId: string) => {
+    setUncompletingTaskIds(prev => new Set(prev).add(taskId));
+    // Remove from uncompleting task set after animation completes
+    setTimeout(() => {
+      setUncompletingTaskIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
         return newSet;
@@ -241,7 +256,9 @@ export const useTodos = (user: User): UseTodosReturn => {
     setMovedTasksNotification,
     newTaskIds,
     completingTaskIds,
+    uncompletingTaskIds,
     addNewTaskId,
     addCompletingTaskId,
+    addUncompletingTaskId,
   };
 }; 
