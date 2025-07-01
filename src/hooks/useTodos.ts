@@ -18,8 +18,10 @@ interface UseTodosReturn {
   setMovedTasksNotification: (message: string) => void;
   newTaskIds: Set<string>;
   completingTaskIds: Set<string>;
+  migrationTaskIds: Set<string>;
   addNewTaskId: (taskId: string) => void;
   addCompletingTaskId: (taskId: string) => void;
+  addMigrationTaskId: (taskId: string) => void;
 }
 
 export const useTodos = (user: User): UseTodosReturn => {
@@ -29,6 +31,7 @@ export const useTodos = (user: User): UseTodosReturn => {
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
   const [newTaskIds, setNewTaskIds] = useState<Set<string>>(new Set());
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
+  const [migrationTaskIds, setMigrationTaskIds] = useState<Set<string>>(new Set());
 
   const showMovedTasksNotification = (tasksCount: number) => {
     const message = tasksCount === 1 
@@ -79,6 +82,18 @@ export const useTodos = (user: User): UseTodosReturn => {
     // Remove from completing task set after animation completes
     setTimeout(() => {
       setCompletingTaskIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }, 1000); // Animation duration
+  };
+
+  const addMigrationTaskId = (taskId: string) => {
+    setMigrationTaskIds(prev => new Set(prev).add(taskId));
+    // Remove from migration task set after animation completes
+    setTimeout(() => {
+      setMigrationTaskIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
         return newSet;
@@ -146,8 +161,8 @@ export const useTodos = (user: User): UseTodosReturn => {
           blockedChildren.forEach(child => allTaskIdsToAnimate.push(child.id));
         });
         
-        // Start animation for all tasks being moved (parents + children)
-        await animateTaskTransition(allTaskIdsToAnimate);
+        // Start migration animation for all tasks being moved (parents + children)
+        allTaskIdsToAnimate.forEach(taskId => addMigrationTaskId(taskId));
         
         // Update Firebase first
         await moveTasksToTodayCategory(tasksToMove, todoList);
@@ -241,7 +256,9 @@ export const useTodos = (user: User): UseTodosReturn => {
     setMovedTasksNotification,
     newTaskIds,
     completingTaskIds,
+    migrationTaskIds,
     addNewTaskId,
     addCompletingTaskId,
+    addMigrationTaskId,
   };
 }; 

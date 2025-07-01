@@ -44,6 +44,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     showBlockedTasksMovedNotification,
     newTaskIds,
     completingTaskIds,
+    migrationTaskIds,
     addNewTaskId,
     addCompletingTaskId,
   } = useTodos(user);
@@ -114,6 +115,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isAnimating={animatingTaskIds.has(todo.id)}
               isNewTask={newTaskIds.has(todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
+              isMigratingTask={migrationTaskIds.has(todo.id)}
             />
           </Box>
           
@@ -159,6 +161,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isAnimating={animatingTaskIds.has(child.id)}
                     isNewTask={newTaskIds.has(child.id)}
                     isCompletingTask={completingTaskIds.has(child.id)}
+                    isMigratingTask={migrationTaskIds.has(child.id)}
                   />
                 </Box>
               ))}
@@ -222,6 +225,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               animatingTaskIds={animatingTaskIds}
               newTaskIds={newTaskIds}
               completingTaskIds={completingTaskIds}
+              migrationTaskIds={migrationTaskIds}
               shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
             />
 
@@ -243,6 +247,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 animatingTaskIds={animatingTaskIds}
                 newTaskIds={newTaskIds}
                 completingTaskIds={completingTaskIds}
+                migrationTaskIds={migrationTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
               />
             </Box>
@@ -311,6 +316,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             animatingTaskIds={animatingTaskIds}
             newTaskIds={newTaskIds}
             completingTaskIds={completingTaskIds}
+            migrationTaskIds={migrationTaskIds}
           />
         </Box>
       )}
