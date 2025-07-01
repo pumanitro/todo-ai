@@ -162,10 +162,23 @@ export const useTodos = (user: User): UseTodosReturn => {
         });
         
         // Start migration animation for all tasks being moved (parents + children)
-        allTaskIdsToAnimate.forEach(taskId => addMigrationTaskId(taskId));
+        // Use shake animation (not exit animation) for auto-migration
+        allTaskIdsToAnimate.forEach(taskId => {
+          setAnimatingTaskIds(prev => new Set(prev).add(taskId));
+        });
         
-        // Update Firebase first
+        // Wait for animation to complete BEFORE moving tasks
+        await new Promise(resolve => setTimeout(resolve, 800)); // Wait for 0.8 seconds (shake animation duration)
+        
+        // Update Firebase after animation completes
         await moveTasksToTodayCategory(tasksToMove, todoList);
+        
+        // Clean up animation state
+        setAnimatingTaskIds(prev => {
+          const newSet = new Set(prev);
+          allTaskIdsToAnimate.forEach(id => newSet.delete(id));
+          return newSet;
+        });
         
         // Count total tasks moved (parents + children)
         const totalTasksMoved = allTaskIdsToAnimate.length;
