@@ -104,10 +104,11 @@ alwaysApply: true
 - **Blocked Task Movement**: Scale and shadow transitions for blocked children moving to backlog
 - **Task Creation**: BounceIn animation using animate.css when new tasks are added via `addTodo`
 - **Task Completion**: BackOutDown animation using animate.css when tasks are marked as completed (visual completion happens immediately, then animates out)
-- **Task Uncomplete**: BackOutUp animation using animate.css when completed tasks are unchecked (visual uncomplete happens after animation)
+- **Task Uncomplete**: BackOutUp animation using animate.css when completed tasks are unchecked (Firebase update happens after 300ms delay to ensure animation visibility and proper categorization)
 - **Animation Tracking**: `newTaskIds`, `completingTaskIds`, and `uncompletingTaskIds` Sets in useTodos hook track animation states
 - **Duration**: 0.8-second shake animation with ease-in-out easing, 1-second timeout for animate.css animations
 - **Library**: animate.css for bounceIn/backOutDown/backOutUp effects with fallback for unsupported browsers
+- **Timing Fix**: Uncomplete operations update Firebase after 300ms delay to ensure animation visibility while maintaining proper categorization
 
 ## Feedback System
 - **Audio Feedback**: Pleasant completion sound using task-completed.mp3 file with Web Audio API fallback
@@ -183,6 +184,6 @@ alwaysApply: true
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v30` (updated for completedAt timestamp feature)
+- Cache version: `todo-flow-v31` (updated for uncomplete task timing fix)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes

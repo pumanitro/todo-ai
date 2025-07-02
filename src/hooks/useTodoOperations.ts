@@ -118,24 +118,6 @@ export const useTodoOperations = ({
       const currentTodo = todos.find(todo => todo.id === todoId);
       if (!currentTodo) return;
 
-      if (newCompletedStatus) {
-        // Trigger feedback when completing a task (not when uncompleting)
-        triggerTaskCompletionFeedback();
-        // Add bounceOut animation for completing task
-        addCompletingTaskId(todoId);
-        
-        // Wait for animation to complete before updating Firebase
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        // Trigger reverse feedback when uncompleting a task
-        triggerTaskUncompletionFeedback();
-        // Add backOutUp animation for uncompleting task
-        addUncompletingTaskId(todoId);
-        
-        // Wait for animation to complete before updating Firebase
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
       // Find blocked children before completing the parent
       const blockedChildren = todos.filter(todo => todo.blockedBy === todoId && !todo.completed);
       
@@ -143,10 +125,18 @@ export const useTodoOperations = ({
       let newCategory: 'today' | 'backlog' | 'postponed';
       
       if (newCompletedStatus) {
+        // Trigger feedback when completing a task
+        triggerTaskCompletionFeedback();
+        // Add bounceOut animation for completing task
+        addCompletingTaskId(todoId);
+        
         // Completing a task - move to completed section
         const minCompletedOrder = getMinCompletedOrder(todos);
         newOrder = minCompletedOrder - 1;
         newCategory = currentTodo.category; // Keep current category
+
+        // Wait for animation to complete before updating Firebase
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Handle blocked children when parent is completed
         if (blockedChildren.length > 0) {
@@ -172,19 +162,36 @@ export const useTodoOperations = ({
           showBlockedTasksMovedNotification(blockedChildren.length, currentTodo.text);
         }
       } else {
+        // Trigger reverse feedback when uncompleting a task
+        triggerTaskUncompletionFeedback();
+        // Add backOutUp animation for uncompleting task
+        addUncompletingTaskId(todoId);
+        
         // Uncompleting a task - recategorize based on due date
         newCategory = categorizeTodoByDueDate(currentTodo.dueDate);
         const minCategoryOrder = getMinOrderInCategory(todos, newCategory);
         newOrder = minCategoryOrder - 1;
+
+
+        
+        // Wait for animation to start and be visible, then update Firebase
+        // This ensures both animation visibility and proper categorization
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
-      await TodoService.updateTodo(user.uid, todoId, { 
+      const updateData: any = { 
         completed: newCompletedStatus,
         order: newOrder,
         category: newCategory,
-        ...(newCompletedStatus && { completedAt: Date.now() }),
-        ...(!newCompletedStatus && { completedAt: undefined })
-      });
+        ...(newCompletedStatus && { completedAt: Date.now() })
+      };
+      
+      // Explicitly remove completedAt when uncompleting
+      if (!newCompletedStatus) {
+        updateData.completedAt = null;
+      }
+      
+      await TodoService.updateTodo(user.uid, todoId, updateData);
     } catch (error) {
       console.error('Error updating todo:', error);
     }
