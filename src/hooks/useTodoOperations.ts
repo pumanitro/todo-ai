@@ -181,7 +181,9 @@ export const useTodoOperations = ({
       await TodoService.updateTodo(user.uid, todoId, { 
         completed: newCompletedStatus,
         order: newOrder,
-        category: newCategory
+        category: newCategory,
+        ...(newCompletedStatus && { completedAt: Date.now() }),
+        ...(!newCompletedStatus && { completedAt: undefined })
       });
     } catch (error) {
       console.error('Error updating todo:', error);

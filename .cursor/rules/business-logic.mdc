@@ -36,11 +36,12 @@ alwaysApply: true
 - Consistent error handling across layers
 
 ## Data Model
-- **Todo**: `{id, text, completed, timestamp, order, description?, category, dueDate?, blockedBy?}`
+- **Todo**: `{id, text, completed, timestamp, order, description?, category, dueDate?, blockedBy?, completedAt?}`
 - **Categories**: `'today' | 'backlog' | 'postponed'`
 - **User Data**: Firebase path `users/${uid}/todos/`
 - **Due Date**: ISO date string (YYYY-MM-DD), optional field
 - **Blocked By**: Task ID that this task is blocked by, creates hierarchical nesting
+- **Completed At**: Timestamp when task was completed, set on completion and cleared on uncomplete
 
 ## Security & Authentication
 - **Authentication**: Required for all database operations (`auth != null`)
@@ -182,6 +183,6 @@ alwaysApply: true
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v28` (updated for PWA branding and SEO)
+- Cache version: `todo-flow-v30` (updated for completedAt timestamp feature)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes
