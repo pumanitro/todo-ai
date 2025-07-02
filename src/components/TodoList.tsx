@@ -138,24 +138,21 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               />
               
               {children.map((child, childIndex) => (
-                <Box 
-                  key={child.id} 
-                  sx={{ 
-                    ml: 0, 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    '&:before': {
-                      content: '""',
+                <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
+                  {/* Horizontal connector line */}
+                  <Box 
+                    sx={{ 
                       position: 'absolute',
                       left: -12,
                       top: '50%',
-                      width: 8,
-                      height: 1,
+                      width: 12,
+                      height: 2,
                       backgroundColor: 'divider',
-                      opacity: 0.5
-                    }
-                  }}
-                >
+                      opacity: 0.5,
+                      transform: 'translateY(-50%)'
+                    }} 
+                  />
+                  
                   <TodoItem
                     todo={child}
                     index={childIndex}
