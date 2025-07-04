@@ -2,6 +2,12 @@
 
 A powerful, intelligent todo app with smart categorization, task hierarchies, and seamless cross-device sync. Built as a modern PWA for optimal mobile and desktop experience.
 
+## TODO 
+[] Add support for tool calling from chat gpt agent (OR MCP server when chat supports it) to manage tasks from within chatgpt
+(api-key auth)
+ https://github.com/cameronking4/chat-with-firestore-chatgpt-action/blob/main/app/api/firestore/route.ts
+
+
 ## ✨ Key Features
 
 ### Smart Task Management
