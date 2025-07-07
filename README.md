@@ -6,7 +6,9 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 [] Add support for tool calling from chat gpt agent (OR MCP server when chat supports it) to manage tasks from within chatgpt
 (api-key auth)
  https://github.com/cameronking4/chat-with-firestore-chatgpt-action/blob/main/app/api/firestore/route.ts
+ 
 [] today's todo red, amount indicator like all messages apps do
+
 [] for PWA app, refresh the app data when you just open it (the page is not refreshed) mostly for automation to kick it
 
 
