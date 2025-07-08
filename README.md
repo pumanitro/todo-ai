@@ -15,6 +15,8 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 
 [ ] d&d nested elements should take these nested elements with drag (now it takes just the parent and child stays in the same position strangely when dragging)
 
+[ ] numbers in task name should be highlighted as links, when you click on it on mobile, then you should call it
+
 
 ## ✨ Key Features
 
