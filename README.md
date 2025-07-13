@@ -17,6 +17,7 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 
 [ ] numbers in task name should be highlighted as links, when you click on it on mobile, then you should call it
 
+[ ] get rid of preview when you edit description of a given task
 
 ## ✨ Key Features
 
