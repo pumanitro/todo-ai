@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Badge } from '@mui/material';
 import { Droppable } from '@hello-pangea/dnd';
 import { Todo, TodoCategory } from '../../types/todo';
 import TodoItem from './TodoItem';
@@ -15,6 +15,7 @@ interface NestedTodoSectionProps {
   newTaskIds?: Set<string>;
   completingTaskIds?: Set<string>;
   uncompletingTaskIds?: Set<string>;
+  badgeCount?: number;
 }
 
 interface TodoHierarchy {
@@ -33,6 +34,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   newTaskIds = new Set(),
   completingTaskIds = new Set(),
   uncompletingTaskIds = new Set(),
+  badgeCount,
 }) => {
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
@@ -185,11 +187,27 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
 
   return (
     <Box sx={{ mb: title ? 2 : 1 }}>
-      {title && (
-        <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
-          {title}
-        </Typography>
-      )}
+              {title && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="overline" sx={{ fontWeight: 600 }}>
+              {title}
+            </Typography>
+            {badgeCount !== undefined && badgeCount > 0 && (
+              <Badge
+                badgeContent={badgeCount}
+                color="error"
+                sx={{ 
+                  ml: 1.5,
+                  '& .MuiBadge-badge': {
+                    fontSize: '0.6rem',
+                    height: '16px',
+                    minWidth: '16px',
+                  }
+                }}
+              />
+            )}
+          </Box>
+        )}
 
       <Droppable droppableId={category}>
         {(provided, snapshot) => (

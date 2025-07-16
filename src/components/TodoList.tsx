@@ -233,6 +233,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               completingTaskIds={completingTaskIds}
               uncompletingTaskIds={uncompletingTaskIds}
               shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+              badgeCount={todayTodoCount}
             />
 
             {/* Backlog Section with Add Todo Form */}

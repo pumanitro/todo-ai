@@ -1,12 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Todo } from '../types/todo';
 import { 
-  generateBadgedFavicon, 
-  updateFavicon, 
-  updateDocumentTitle,
-  clearAllBadges,
-  updateAppBadge,
-  isBadgeApiSupported,
   isAndroid
 } from '../utils/badgeUtils';
 
@@ -16,7 +10,7 @@ interface UseBadgeManagerProps {
 }
 
 export const useBadgeManager = ({ todos, isConnected }: UseBadgeManagerProps) => {
-  // Calculate count of today's todos (including overdue)
+  // Calculate count of today's todos (including overdue) - keeping for potential future use
   const todayTodoCount = useMemo(() => {
     return todos.filter(todo => 
       !todo.completed && 
@@ -24,55 +18,42 @@ export const useBadgeManager = ({ todos, isConnected }: UseBadgeManagerProps) =>
     ).length;
   }, [todos]);
 
-  // Update all badge indicators when count changes
+  // Badge functionality disabled - no updates to favicon, title, or app badge
   useEffect(() => {
-    const updateBadges = async () => {
-      if (!isConnected) {
-        // Don't update badges when offline to avoid confusion
-        return;
-      }
-
-      try {
-        // Update PWA app badge (only works on supported platforms like desktop)
-        await updateAppBadge(todayTodoCount);
-        
-        // Update document title (works everywhere)
-        updateDocumentTitle(todayTodoCount);
-        
-        // Update favicon with badge (works everywhere)
-        if (todayTodoCount > 0) {
-          const badgedFavicon = generateBadgedFavicon(todayTodoCount);
-          updateFavicon(badgedFavicon);
-        } else {
-          // Reset to original favicon when no todos
-          const existingFavicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-          if (existingFavicon) {
-            existingFavicon.remove();
-          }
-          
-          const link = document.createElement('link');
-          link.rel = 'icon';
-          link.href = '/favicon.ico';
-          document.head.appendChild(link);
-        }
-      } catch (error) {
-        console.error('Error updating badges:', error);
-      }
-    };
-
-    updateBadges();
+    // Intentionally empty - all badge functionality removed
   }, [todayTodoCount, isConnected]);
 
-  // Clear badges when component unmounts
+  // Clear any existing badges on unmount
   useEffect(() => {
     return () => {
-      clearAllBadges();
+      // Reset document title to default
+      document.title = 'Todo Flow';
+      
+      // Reset to original favicon
+      const existingFavicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      if (existingFavicon) {
+        existingFavicon.remove();
+      }
+      
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = '/favicon.ico';
+      document.head.appendChild(link);
+
+      // Clear app badge if supported
+      if ('clearAppBadge' in navigator) {
+        try {
+          (navigator as any).clearAppBadge();
+        } catch (error) {
+          // Ignore errors
+        }
+      }
     };
   }, []);
 
   return {
     todayTodoCount,
-    badgeSupported: isBadgeApiSupported(),
+    badgeSupported: false, // Always false since badges are disabled
     isAndroidDevice: isAndroid()
   };
 }; 
