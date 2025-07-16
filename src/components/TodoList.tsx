@@ -16,6 +16,7 @@ import PWAInstallPrompt from './PWAInstallPrompt';
 // Custom hooks and utilities
 import { useTodos } from '../hooks/useTodos';
 import { useTodoOperations } from '../hooks/useTodoOperations';
+import { useBadgeManager } from '../hooks/useBadgeManager';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
 import { formatDateGroupTitle } from '../utils/dateUtils';
 
@@ -59,6 +60,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     addCompletingTaskId,
     addUncompletingTaskId,
   });
+
+  // Badge management for PWA icon and browser tab
+  useBadgeManager({ todos, isConnected });
 
   const handleTodoClick = (todo: Todo) => {
     setSelectedTodo(todo);

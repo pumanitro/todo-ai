@@ -183,7 +183,16 @@ alwaysApply: true
 - **SEO Optimized**: Comprehensive meta tags, Open Graph, and Twitter Card support
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
+## Badge Indicators System
+- **App Badge API**: Shows red badge with today's todo count on PWA icon using native Badge API
+- **Dynamic Favicon**: Browser tab icon updates with red badge overlay showing count
+- **Document Title**: Page title shows count in format "(5) Todo Flow" when tasks pending
+- **Auto-Update**: Badge count automatically updates when today's todos change
+- **Messaging App UX**: Mimics familiar notification patterns from messaging applications
+- **Offline Awareness**: Badge updates pause when offline to avoid confusion
+- **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
+
 ## PWA Cache Management
-- Cache version: `todo-flow-v31` (updated for uncomplete task timing fix)
+- Cache version: `todo-flow-v34` (updated for badge indicator system)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes
