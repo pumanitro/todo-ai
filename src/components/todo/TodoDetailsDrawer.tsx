@@ -144,23 +144,14 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
               label="Description"
               variant="outlined"
               multiline
-              rows={4}
+              minRows={2}
+              maxRows={10}
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
               onBlur={() => onSaveEdit('description', editedDescription)}
               placeholder="Add a description for this task..."
-              sx={{ mb: 1 }}
+              sx={{ mb: 2 }}
             />
-            {editedDescription && (
-              <Box sx={{ mb: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                  Preview:
-                </Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {renderTextWithLinks(editedDescription)}
-                </Typography>
-              </Box>
-            )}
             <TextField
               fullWidth
               type="date"
