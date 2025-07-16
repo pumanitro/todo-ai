@@ -1,5 +1,4 @@
 // Badge management utilities for PWA icon and browser tab indicators
-import { AndroidNotificationService } from '../services/notificationService';
 
 /**
  * Detect if the user is on Android
@@ -13,35 +12,6 @@ export const isAndroid = (): boolean => {
  */
 export const isMobile = (): boolean => {
   return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-/**
- * Check if notification permissions are granted
- */
-export const hasNotificationPermission = (): boolean => {
-  return AndroidNotificationService.hasPermission();
-};
-
-/**
- * Request notification permissions for Android badge support
- */
-export const requestNotificationPermission = async (): Promise<boolean> => {
-  return AndroidNotificationService.requestPermission();
-};
-
-/**
- * Update badge using notifications for Android (triggers automatic badge)
- */
-export const updateAndroidBadge = async (count: number): Promise<void> => {
-  if (!isAndroid() || !AndroidNotificationService.isSupported()) {
-    return;
-  }
-
-  try {
-    await AndroidNotificationService.updateBadgeCount(count);
-  } catch (error) {
-    console.error('Error updating Android badge:', error);
-  }
 };
 
 /**
@@ -117,7 +87,7 @@ export const updateFavicon = (dataUrl: string) => {
 };
 
 /**
- * Update the PWA app badge using the Badge API (desktop/Mac)
+ * Update the PWA app badge using the Badge API (desktop/supported platforms only)
  */
 export const updateAppBadge = async (count: number) => {
   if ('setAppBadge' in navigator) {
@@ -134,28 +104,9 @@ export const updateAppBadge = async (count: number) => {
 };
 
 /**
- * Universal badge update that chooses the right method for the platform
+ * Check if Badge API is supported
  */
-export const updatePlatformBadge = async (count: number): Promise<void> => {
-  if (isAndroid() && hasNotificationPermission()) {
-    // Use notification-based badge for Android
-    await updateAndroidBadge(count);
-  } else {
-    // Use Badge API for desktop/other platforms
-    await updateAppBadge(count);
-  }
-};
-
-/**
- * Initialize badge system (request permissions if needed)
- */
-export const initializeBadgeSystem = async (): Promise<boolean> => {
-  if (isAndroid()) {
-    // Request notification permission for Android badge support
-    return await requestNotificationPermission();
-  }
-  
-  // For other platforms, Badge API doesn't require special permissions
+export const isBadgeApiSupported = (): boolean => {
   return 'setAppBadge' in navigator;
 };
 
@@ -174,8 +125,8 @@ export const updateDocumentTitle = (count: number, baseTitle: string = 'Todo Flo
  * Clear all badge indicators
  */
 export const clearAllBadges = async () => {
-  // Clear platform-specific badge
-  await updatePlatformBadge(0);
+  // Clear Badge API if supported
+  await updateAppBadge(0);
   
   // Reset document title
   updateDocumentTitle(0);

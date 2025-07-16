@@ -179,20 +179,17 @@
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
 ## Badge Indicators System
-- **App Badge API**: Shows red badge with today's todo count on PWA icon using native Badge API (desktop/Mac)
-- **Android Badge Support**: Uses notification-based badges for Android devices (automatic system behavior)
-- **Dynamic Favicon**: Browser tab icon updates with red badge overlay showing count
-- **Document Title**: Page title shows count in format "(5) Todo Flow" when tasks pending
+- **App Badge API**: Shows red badge with today's todo count on PWA icon using native Badge API (desktop/Mac only)
+- **Dynamic Favicon**: Browser tab icon updates with red badge overlay showing count (works everywhere)
+- **Document Title**: Page title shows count in format "(5) Todo Flow" when tasks pending (works everywhere)
 - **Auto-Update**: Badge count automatically updates when today's todos change
-- **Platform Detection**: Automatically detects Android devices and uses appropriate badge method
-- **Permission Handling**: Requests notification permissions on Android for badge functionality
-- **Notification Strategy**: Silent notifications with tag 'todo-badge' trigger Android's automatic badge system
-- **Fallback Support**: Graceful degradation when badge APIs not supported with favicon and title updates
-- **Messaging App UX**: Mimics familiar notification patterns from messaging applications
+- **Platform Support**: Badge API only works on desktop/Mac, gracefully degrades on Android with favicon/title only
+- **No Notifications**: Clean badge system without any notification prompts or permission requests
+- **Messaging App UX**: Mimics familiar notification patterns from messaging applications where supported
 - **Offline Awareness**: Badge updates pause when offline to avoid confusion
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v36` (updated for Android badge support)
-- Service worker handles offline functionality and notification events
+- Cache version: `todo-flow-v37` (updated to remove notification-based badges)
+- Service worker handles offline functionality only
 - Always update cache version for significant code changes

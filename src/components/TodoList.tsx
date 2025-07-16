@@ -12,13 +12,11 @@ import CompletedTodosSection from './todo/CompletedTodosSection';
 import TodoDetailsDrawer from './todo/TodoDetailsDrawer';
 import TodoItem from './todo/TodoItem';
 import PWAInstallPrompt from './PWAInstallPrompt';
-import NotificationPermissionPrompt from './NotificationPermissionPrompt';
 
 // Custom hooks and utilities
 import { useTodos } from '../hooks/useTodos';
 import { useTodoOperations } from '../hooks/useTodoOperations';
 import { useBadgeManager } from '../hooks/useBadgeManager';
-import { useNotificationPermissions } from '../hooks/useNotificationPermissions';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
 import { formatDateGroupTitle } from '../utils/dateUtils';
 
@@ -65,14 +63,6 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
   // Badge management for PWA icon and browser tab
   const { todayTodoCount, badgeSupported, isAndroidDevice } = useBadgeManager({ todos, isConnected });
-
-  // Notification permissions for Android badge support
-  const {
-    showPermissionPrompt,
-    requestPermission,
-    dismissPrompt,
-    hasPermission
-  } = useNotificationPermissions({ badgeSupported });
 
   const handleTodoClick = (todo: Todo) => {
     setSelectedTodo(todo);
@@ -406,13 +396,6 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           {movedTasksNotification}
         </Alert>
       </Snackbar>
-
-      {/* Android notification permission prompt for badge support */}
-      <NotificationPermissionPrompt
-        open={showPermissionPrompt}
-        onRequest={requestPermission}
-        onDismiss={dismissPrompt}
-      />
 
       <PWAInstallPrompt />
     </Container>

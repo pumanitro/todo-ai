@@ -14,7 +14,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-flow-v36';
+const CACHE_NAME = 'todo-flow-v37';
 
 /**
  * In production your build pipeline should replace
@@ -128,77 +128,3 @@ function doBackgroundSync() {
   // Expand this to replay queued "todo" actions, etc.
   console.log('[SW] Background sync triggered');
 }
-
-/* ---------------------------------------------------------- */
-/*  NOTIFICATION EVENTS for Android badge support             */
-/* ---------------------------------------------------------- */
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  
-  // Handle different notification types
-  const notificationData = event.notification.data || {};
-  
-  if (notificationData.type === 'badge-update') {
-    // For badge notifications, open the app
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true })
-        .then((clientList) => {
-          // If app is already open, focus it
-          for (const client of clientList) {
-            if (client.url.includes(self.location.origin) && 'focus' in client) {
-              return client.focus();
-            }
-          }
-          
-          // Otherwise, open a new window
-          if (clients.openWindow) {
-            return clients.openWindow('/');
-          }
-        })
-    );
-  }
-});
-
-self.addEventListener('notificationclose', (event) => {
-  // Handle notification close if needed
-  const notificationData = event.notification.data || {};
-  
-  if (notificationData.type === 'badge-update') {
-    console.log('[SW] Badge notification closed');
-  }
-});
-
-/* ---------------------------------------------------------- */
-/*  PUSH EVENT for future badge updates (optional)            */
-/* ---------------------------------------------------------- */
-self.addEventListener('push', (event) => {
-  if (!event.data) {
-    return;
-  }
-
-  try {
-    const data = event.data.json();
-    
-    if (data.type === 'badge-update') {
-      // Handle server-side badge updates
-      const options = {
-        body: data.body || `${data.count} tasks remaining today`,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: 'todo-badge',
-        silent: true,
-        requireInteraction: false,
-        data: {
-          type: 'badge-update',
-          count: data.count
-        }
-      };
-
-      event.waitUntil(
-        self.registration.showNotification('Todo Flow', options)
-      );
-    }
-  } catch (error) {
-    console.error('[SW] Error handling push event:', error);
-  }
-});
