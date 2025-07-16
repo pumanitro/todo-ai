@@ -161,7 +161,10 @@
 
 ## Text Rendering & Links
 - **URL Detection**: Automatic detection of HTTP/HTTPS URLs in task names and descriptions using regex
+- **Phone Number Detection**: Automatic detection of phone numbers in various formats (international, with/without separators)
 - **Clickable Links**: URLs converted to blue clickable links that open in new tab (target="_blank")
+- **Click-to-Call**: Phone numbers converted to clickable tel: links for mobile calling functionality
+- **Phone Validation**: Smart validation to avoid matching random numbers (7-15 digits, international format support)
 - **Link Truncation**: Long URLs displayed with max 65 characters + "..." for clean UI
 - **Click Prevention**: Link clicks use stopPropagation to prevent task selection when clicking links
 - **Preview Mode**: Task descriptions show rendered preview with clickable links below edit field

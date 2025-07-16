@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { Todo } from '../types/todo';
 import { TodoService } from '../services/todoService';
@@ -32,6 +32,14 @@ export const useTodos = (user: User): UseTodosReturn => {
   const [newTaskIds, setNewTaskIds] = useState<Set<string>>(new Set());
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
   const [uncompletingTaskIds, setUncompletingTaskIds] = useState<Set<string>>(new Set());
+  
+  // Ref to track current todos for visibility listener
+  const todosRef = useRef<Todo[]>([]);
+  
+  // Update ref whenever todos change
+  useEffect(() => {
+    todosRef.current = todos;
+  }, [todos]);
 
   const showMovedTasksNotification = (tasksCount: number) => {
     const message = tasksCount === 1 
@@ -239,7 +247,28 @@ export const useTodos = (user: User): UseTodosReturn => {
     
     try {
       const unsubscribe = TodoService.setupTodosListener(user.uid, handleSnapshot, handleError);
-      return unsubscribe;
+      
+      // Add simple auto-migration trigger when app becomes visible
+      const handleVisibilityChange = () => {
+        if (!document.hidden && todosRef.current.length > 0) {
+          const tasksToMove = findTasksToMoveToToday(todosRef.current);
+          if (tasksToMove.length > 0) {
+            // Reconstruct current data and trigger handleSnapshot
+            const currentData = todosRef.current.reduce((acc, todo) => {
+              acc[todo.id] = { ...todo };
+              return acc;
+            }, {} as any);
+            handleSnapshot({ val: () => currentData });
+          }
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        unsubscribe();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     } catch (error) {
       console.error('Error setting up Firebase listener:', error);
     }

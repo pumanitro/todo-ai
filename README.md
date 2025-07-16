@@ -7,15 +7,15 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 (api-key auth)
  https://github.com/cameronking4/chat-with-firestore-chatgpt-action/blob/main/app/api/firestore/route.ts
  
-[ ] today's todo red, amount indicator like all messages apps do - especially for PWA or Desktop app ICON
+[x] today's todo red, amount indicator like all messages apps do - especially for PWA or Desktop app ICON
 
-[ ] for PWA app, refresh the app data when you just open it (the page is not refreshed) mostly for automation to kick it
+[x] automation is not kicking in on PWA to move tasks from postponed to today
 
 [x] add ultra-focus at the top, editable field that reminds you about your top focus
 
 [ ] d&d nested elements should take these nested elements with drag (now it takes just the parent and child stays in the same position strangely when dragging)
 
-[ ] numbers in task name should be highlighted as links, when you click on it on mobile, then you should call it
+[x] numbers in task name should be highlighted as links, when you click on it on mobile, then you should call it
 
 [x] get rid of preview when you edit description of a given task
 
