@@ -150,7 +150,7 @@
 - **Due Date Display**: Color-coded chips (error=overdue, warning=today, info=soon)
 - **Typography**: body2 for items, small icons, reduced font sizes
 - **Flexbox Positioning**: Use justify-content/align-items instead of absolute positioning
-- **User Header**: Minimal design with avatar in top-right corner, connection status dot (green/orange), dropdown menu for logout
+- **User Header**: Minimal design with avatar in top-right corner, connection status dot (green/orange), dropdown menu for logout, ULTRAFOCUS editable field
 
 ## Mobile UI Pattern
 - **Add Task Form**: Hidden on mobile (`isMobile` breakpoint detection)
@@ -179,7 +179,14 @@
 - **SEO Optimized**: Comprehensive meta tags, Open Graph, and Twitter Card support
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
+## ULTRAFOCUS Feature
+- **User Focus Field**: Editable text field in header for user's current focus/goal
+- **Firebase Storage**: Saved per user at `users/${uid}/ultraFocus` path
+- **Click to Edit**: Display mode shows text, click transforms to editable input
+- **Auto-Save**: Saves to Firebase on blur or Enter key press
+- **Placeholder**: Shows "ULTRAFOCUS" when empty with reduced opacity
+
 ## PWA Cache Management
-- Cache version: `todo-flow-v31` (updated for uncomplete task timing fix)
+- Cache version: `todo-flow-v32` (updated for ULTRAFOCUS feature)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes 

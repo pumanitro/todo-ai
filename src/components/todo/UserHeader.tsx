@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Box, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge, TextField, Typography } from '@mui/material';
 import { Logout } from '@mui/icons-material';
 import { User, signOut } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { ref, set, onValue } from 'firebase/database';
+import { auth, database } from '../../firebase/config';
 
 interface UserHeaderProps {
   user: User;
@@ -11,7 +12,26 @@ interface UserHeaderProps {
 
 const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [ultraFocus, setUltraFocus] = useState<string>('');
+  const [isEditingFocus, setIsEditingFocus] = useState<boolean>(false);
+  const [focusInputValue, setFocusInputValue] = useState<string>('');
   const open = Boolean(anchorEl);
+
+  // Load ultrafocus from Firebase
+  useEffect(() => {
+    if (user?.uid) {
+      const ultraFocusRef = ref(database, `users/${user.uid}/ultraFocus`);
+      const unsubscribe = onValue(ultraFocusRef, (snapshot) => {
+        const value = snapshot.val();
+        if (value) {
+          setUltraFocus(value);
+          setFocusInputValue(value);
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user?.uid]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -30,8 +50,73 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
     }
   };
 
+  const handleFocusClick = () => {
+    setIsEditingFocus(true);
+  };
+
+  const handleFocusBlur = async () => {
+    setIsEditingFocus(false);
+    if (user?.uid && focusInputValue !== ultraFocus) {
+      try {
+        const ultraFocusRef = ref(database, `users/${user.uid}/ultraFocus`);
+        await set(ultraFocusRef, focusInputValue);
+      } catch (error) {
+        console.error('Error saving ultra focus:', error);
+      }
+    }
+  };
+
+  const handleFocusKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleFocusBlur();
+    }
+  };
+
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ flex: 1, mr: 2 }}>
+        {isEditingFocus ? (
+          <TextField
+            value={focusInputValue}
+            onChange={(e) => setFocusInputValue(e.target.value)}
+            onBlur={handleFocusBlur}
+            onKeyPress={handleFocusKeyPress}
+            placeholder="ULTRAFOCUS"
+            variant="standard"
+            fullWidth
+            autoFocus
+            sx={{
+              '& .MuiInput-root': {
+                fontSize: '1.1rem',
+                fontWeight: 500,
+              },
+              '& .MuiInput-input::placeholder': {
+                opacity: 0.7,
+                fontWeight: 500,
+              }
+            }}
+          />
+        ) : (
+          <Typography
+            variant="h6"
+            onClick={handleFocusClick}
+            sx={{
+              cursor: 'pointer',
+              opacity: ultraFocus ? 1 : 0.5,
+              fontWeight: 500,
+              '&:hover': {
+                opacity: ultraFocus ? 0.8 : 0.7,
+              },
+              minHeight: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {ultraFocus || 'ULTRAFOCUS'}
+          </Typography>
+        )}
+      </Box>
+      
       <IconButton
         onClick={handleClick}
         size="small"
