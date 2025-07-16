@@ -1,4 +1,48 @@
 // Badge management utilities for PWA icon and browser tab indicators
+import { AndroidNotificationService } from '../services/notificationService';
+
+/**
+ * Detect if the user is on Android
+ */
+export const isAndroid = (): boolean => {
+  return /Android/i.test(navigator.userAgent);
+};
+
+/**
+ * Detect if the user is on a mobile device
+ */
+export const isMobile = (): boolean => {
+  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+/**
+ * Check if notification permissions are granted
+ */
+export const hasNotificationPermission = (): boolean => {
+  return AndroidNotificationService.hasPermission();
+};
+
+/**
+ * Request notification permissions for Android badge support
+ */
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  return AndroidNotificationService.requestPermission();
+};
+
+/**
+ * Update badge using notifications for Android (triggers automatic badge)
+ */
+export const updateAndroidBadge = async (count: number): Promise<void> => {
+  if (!isAndroid() || !AndroidNotificationService.isSupported()) {
+    return;
+  }
+
+  try {
+    await AndroidNotificationService.updateBadgeCount(count);
+  } catch (error) {
+    console.error('Error updating Android badge:', error);
+  }
+};
 
 /**
  * Generate a favicon with a red badge showing the count
@@ -73,7 +117,7 @@ export const updateFavicon = (dataUrl: string) => {
 };
 
 /**
- * Update the PWA app badge using the Badge API
+ * Update the PWA app badge using the Badge API (desktop/Mac)
  */
 export const updateAppBadge = async (count: number) => {
   if ('setAppBadge' in navigator) {
@@ -87,6 +131,32 @@ export const updateAppBadge = async (count: number) => {
       console.log('Badge API not supported or failed:', error);
     }
   }
+};
+
+/**
+ * Universal badge update that chooses the right method for the platform
+ */
+export const updatePlatformBadge = async (count: number): Promise<void> => {
+  if (isAndroid() && hasNotificationPermission()) {
+    // Use notification-based badge for Android
+    await updateAndroidBadge(count);
+  } else {
+    // Use Badge API for desktop/other platforms
+    await updateAppBadge(count);
+  }
+};
+
+/**
+ * Initialize badge system (request permissions if needed)
+ */
+export const initializeBadgeSystem = async (): Promise<boolean> => {
+  if (isAndroid()) {
+    // Request notification permission for Android badge support
+    return await requestNotificationPermission();
+  }
+  
+  // For other platforms, Badge API doesn't require special permissions
+  return 'setAppBadge' in navigator;
 };
 
 /**
@@ -104,7 +174,10 @@ export const updateDocumentTitle = (count: number, baseTitle: string = 'Todo Flo
  * Clear all badge indicators
  */
 export const clearAllBadges = async () => {
-  await updateAppBadge(0);
+  // Clear platform-specific badge
+  await updatePlatformBadge(0);
+  
+  // Reset document title
   updateDocumentTitle(0);
   
   // Reset to original favicon

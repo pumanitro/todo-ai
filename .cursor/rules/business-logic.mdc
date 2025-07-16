@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # Business Logic Memory Bank
 
 ## Refactored Architecture (v23)
@@ -184,15 +179,20 @@ alwaysApply: true
 - **Branding**: "Todo Flow - Make it happen" branding across all PWA surfaces
 
 ## Badge Indicators System
-- **App Badge API**: Shows red badge with today's todo count on PWA icon using native Badge API
+- **App Badge API**: Shows red badge with today's todo count on PWA icon using native Badge API (desktop/Mac)
+- **Android Badge Support**: Uses notification-based badges for Android devices (automatic system behavior)
 - **Dynamic Favicon**: Browser tab icon updates with red badge overlay showing count
 - **Document Title**: Page title shows count in format "(5) Todo Flow" when tasks pending
 - **Auto-Update**: Badge count automatically updates when today's todos change
+- **Platform Detection**: Automatically detects Android devices and uses appropriate badge method
+- **Permission Handling**: Requests notification permissions on Android for badge functionality
+- **Notification Strategy**: Silent notifications with tag 'todo-badge' trigger Android's automatic badge system
+- **Fallback Support**: Graceful degradation when badge APIs not supported with favicon and title updates
 - **Messaging App UX**: Mimics familiar notification patterns from messaging applications
 - **Offline Awareness**: Badge updates pause when offline to avoid confusion
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v34` (updated for badge indicator system)
-- Service worker handles offline functionality
+- Cache version: `todo-flow-v36` (updated for Android badge support)
+- Service worker handles offline functionality and notification events
 - Always update cache version for significant code changes
