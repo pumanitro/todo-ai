@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge, TextField, Typography } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Logout, Clear } from '@mui/icons-material';
 import { User, signOut } from 'firebase/auth';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, onValue, remove } from 'firebase/database';
 import { auth, database } from '../../firebase/config';
 
 interface UserHeaderProps {
@@ -26,6 +26,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
         if (value) {
           setUltraFocus(value);
           setFocusInputValue(value);
+        } else {
+          setUltraFocus('');
+          setFocusInputValue('');
         }
       });
 
@@ -56,10 +59,16 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
 
   const handleFocusBlur = async () => {
     setIsEditingFocus(false);
-    if (user?.uid && focusInputValue !== ultraFocus) {
+    const capitalizedValue = focusInputValue.toUpperCase().trim();
+    
+    if (user?.uid && capitalizedValue !== ultraFocus) {
       try {
         const ultraFocusRef = ref(database, `users/${user.uid}/ultraFocus`);
-        await set(ultraFocusRef, focusInputValue);
+        if (capitalizedValue) {
+          await set(ultraFocusRef, capitalizedValue);
+        } else {
+          await remove(ultraFocusRef);
+        }
       } catch (error) {
         console.error('Error saving ultra focus:', error);
       }
@@ -69,7 +78,38 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
   const handleFocusKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       handleFocusBlur();
+    } else if (event.key === 'Escape') {
+      setFocusInputValue(ultraFocus);
+      setIsEditingFocus(false);
     }
+  };
+
+  const handleClearFocus = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (user?.uid) {
+      try {
+        const ultraFocusRef = ref(database, `users/${user.uid}/ultraFocus`);
+        await remove(ultraFocusRef);
+        setFocusInputValue('');
+      } catch (error) {
+        console.error('Error clearing ultra focus:', error);
+      }
+    }
+  };
+
+  const handleFocusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFocusInputValue(e.target.value.toUpperCase());
+  };
+
+  const getPlaceholderText = () => {
+    return ultraFocus ? ultraFocus : "✨ DEFINE YOUR ULTRAFOCUS AREA";
+  };
+
+  const getMotivationalText = () => {
+    if (!ultraFocus && !isEditingFocus) {
+      return "🎯 What's your main focus today? Click to set your ULTRAFOCUS area!";
+    }
+    return "";
   };
 
   return (
@@ -78,41 +118,77 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
         {isEditingFocus ? (
           <TextField
             value={focusInputValue}
-            onChange={(e) => setFocusInputValue(e.target.value)}
+            onChange={handleFocusInputChange}
             onBlur={handleFocusBlur}
-            onKeyPress={handleFocusKeyPress}
-            placeholder="ULTRAFOCUS"
+            onKeyDown={handleFocusKeyPress}
+            placeholder="✨ DEFINE YOUR ULTRAFOCUS AREA"
             variant="standard"
             fullWidth
             autoFocus
             sx={{
               '& .MuiInput-root': {
                 fontSize: '1.1rem',
-                fontWeight: 500,
+                fontWeight: 600,
+                textTransform: 'uppercase',
               },
               '& .MuiInput-input::placeholder': {
-                opacity: 0.7,
+                opacity: 0.6,
                 fontWeight: 500,
+                textTransform: 'uppercase',
               }
             }}
           />
         ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="h6"
+              onClick={handleFocusClick}
+              sx={{
+                cursor: 'pointer',
+                opacity: ultraFocus ? 1 : 0.6,
+                fontWeight: ultraFocus ? 600 : 500,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                '&:hover': {
+                  opacity: ultraFocus ? 0.8 : 0.8,
+                },
+                minHeight: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                color: ultraFocus ? 'primary.main' : 'text.secondary',
+              }}
+              title={getMotivationalText()}
+            >
+              {getPlaceholderText()}
+            </Typography>
+            {ultraFocus && (
+              <IconButton
+                size="small"
+                onClick={handleClearFocus}
+                sx={{ 
+                  opacity: 0.5,
+                  '&:hover': { opacity: 1 },
+                  ml: 0.5
+                }}
+                title="Clear ULTRAFOCUS"
+              >
+                <Clear fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
+        )}
+        {!ultraFocus && !isEditingFocus && (
           <Typography
-            variant="h6"
-            onClick={handleFocusClick}
+            variant="caption"
             sx={{
-              cursor: 'pointer',
-              opacity: ultraFocus ? 1 : 0.5,
-              fontWeight: 500,
-              '&:hover': {
-                opacity: ultraFocus ? 0.8 : 0.7,
-              },
-              minHeight: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
+              display: 'block',
+              opacity: 0.7,
+              fontStyle: 'italic',
+              mt: 0.5,
+              color: 'text.secondary',
             }}
           >
-            {ultraFocus || 'ULTRAFOCUS'}
+            🎯 Click above to set your main focus area and boost productivity!
           </Typography>
         )}
       </Box>

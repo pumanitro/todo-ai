@@ -184,9 +184,13 @@
 - **Firebase Storage**: Saved per user at `users/${uid}/ultraFocus` path
 - **Click to Edit**: Display mode shows text, click transforms to editable input
 - **Auto-Save**: Saves to Firebase on blur or Enter key press
-- **Placeholder**: Shows "ULTRAFOCUS" when empty with reduced opacity
+- **Auto-Capitalization**: All text automatically converted to uppercase
+- **Clear Functionality**: Clear button (X) appears when text exists, removes from Firebase
+- **Keyboard Shortcuts**: Enter saves, Escape cancels edit
+- **Motivational UI**: Incentivizing placeholder and caption text to encourage usage
+- **Visual Feedback**: Color changes, tooltips, and emojis for better UX
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v32` (updated for ULTRAFOCUS feature)
+- Cache version: `todo-flow-v33` (updated for enhanced ULTRAFOCUS with clear/reset)
 - Service worker handles offline functionality
 - Always update cache version for significant code changes 
