@@ -15,6 +15,7 @@ export const useBadgeManager = ({ todos, isConnected }: UseBadgeManagerProps) =>
     return todos.filter(todo => 
       !todo.completed && 
       todo.category === 'today'
+      && !todo.blockedBy
     ).length;
   }, [todos]);
 

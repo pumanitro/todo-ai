@@ -36,6 +36,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   uncompletingTaskIds = new Set(),
   badgeCount,
 }) => {
+
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
     const parentTasks = todos.filter(t => !t.blockedBy);

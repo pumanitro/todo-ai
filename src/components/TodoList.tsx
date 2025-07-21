@@ -64,6 +64,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Badge management for PWA icon and browser tab
   const { todayTodoCount, badgeSupported, isAndroidDevice } = useBadgeManager({ todos, isConnected });
 
+  console.log('IIJ todayTodoCount', todayTodoCount);
+
   const handleTodoClick = (todo: Todo) => {
     setSelectedTodo(todo);
     setIsDrawerOpen(true);

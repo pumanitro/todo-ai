@@ -182,7 +182,7 @@ const TodoDetailsDrawer: React.FC<TodoDetailsDrawerProps> = ({
                 {(() => {
                   const groupedTasks = getAvailableBlockingTasks();
                   const items = [];
-                  
+
                   // Today section
                   if (groupedTasks.today.length > 0) {
                     items.push(
