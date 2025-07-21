@@ -19,6 +19,8 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 
 [x] get rid of preview when you edit description of a given task
 
+[ ] https://www.todo-flow updates automaticly when new version but https://todo-flow doesn't 
+
 ## ✨ Key Features
 
 ### Smart Task Management
