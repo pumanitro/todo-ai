@@ -6,6 +6,14 @@ A powerful, intelligent todo app with smart categorization, task hierarchies, an
 [ ] Add support for tool calling from chat gpt agent (OR MCP server when chat supports it) to manage tasks from within chatgpt
 (api-key auth)
  https://github.com/cameronking4/chat-with-firestore-chatgpt-action/blob/main/app/api/firestore/route.ts
+  -> there can be a connector created MCP -> chatgpt tool call
+
+[ ] Add tags per task (with MCP server your AI will be able to attach predefined tags for you to existing tasks)
+
+[ ] Add history of Backlog -> TODAY -> Completed (dates of actions) - that can be later used to create some cool statistics
+  -> e.g. daily life time balance of completed tags based on tags (home, hobby, work) and that could generate you signal to noice ratio too
+
+[ ] create product landing page to sell it (like cursor landing page or similar examples)
  
 [x] today's todo red, amount indicator like all messages apps do - especially for PWA or Desktop app ICON
 
