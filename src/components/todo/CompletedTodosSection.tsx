@@ -37,7 +37,6 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
           alignItems: 'center', 
           cursor: 'pointer',
           py: 0.5,
-          ml: 2,
           '&:hover': {
             backgroundColor: 'action.hover',
           },
@@ -54,7 +53,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
       </Box>
       
       <Collapse in={showCompleted}>
-        <Box sx={{ mt: 1, ml: 2, '& > *': { mb: 0.5 } }}>
+        <Box sx={{ mt: 1, pl: 2, '& > *': { mb: 0.5 } }}>
           {completedTodos.map((todo, index) => (
             <TodoItem
               key={todo.id}

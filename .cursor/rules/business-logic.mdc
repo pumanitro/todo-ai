@@ -140,6 +140,8 @@
 - **Visual Hierarchy**: Subtitle1 typography for group headers, proper spacing between groups
 - **Nesting Priority**: Blocked tasks appear under their parent regardless of their own due date/category
 - **Consistent Implementation**: Uses same hierarchical organization pattern as NestedTodoSection for all sections
+- **View Modes**: Toggle between list view and calendar view (persisted in Firebase user settings)
+- **Calendar View**: Monthly calendar grid showing tasks on due dates, click to open task details
 
 ## UI Design Pattern
 - **Card Layout**: Enhanced shadows for better contrast (multi-layer shadows + subtle border)
@@ -190,6 +192,11 @@
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v37` (updated to remove notification-based badges)
+- Cache version: `todo-flow-v39` (updated for postponed view toggle feature)
 - Service worker handles offline functionality only
 - Always update cache version for significant code changes
+
+## User Settings
+- **Storage Path**: `users/${uid}/settings/` in Firebase Realtime Database
+- **postponedViewMode**: User preference for postponed section display ('list' | 'calendar')
+- **Hook**: `usePostponedViewMode` manages loading/saving view mode preference
