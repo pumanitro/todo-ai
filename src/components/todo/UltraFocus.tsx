@@ -97,7 +97,6 @@ const UltraFocus: React.FC<UltraFocusProps> = ({ user }) => {
           variant="h6"
           onClick={handleFocusClick}
           sx={{
-            ml: 1,
             cursor: 'pointer',
             opacity: ultraFocus ? 1 : 0.6,
             fontWeight: ultraFocus ? 600 : 500,

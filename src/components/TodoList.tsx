@@ -339,20 +339,22 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     const targetDate = new Date(group.date);
                     targetDate.setHours(0, 0, 0, 0);
                     diffDays = Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    if (diffDays > 0) {
+                    if (diffDays >= 1 && diffDays <= 3) {
                       daysLabel = `in ${diffDays}d`;
-                    } else if (diffDays < 0) {
-                      daysLabel = `${Math.abs(diffDays)}d ago`;
+                    } else if (diffDays >= 4 && diffDays <= 6) {
+                      daysLabel = 'in <1w';
+                    } else if (diffDays >= 7) {
+                      daysLabel = '1w+';
                     }
                   }
                   
-                  // Get pill color based on days - red/orange → green → gray
+                  // Get pill color based on days - red/orange/yellow → green → gray
                   const getPillStyle = () => {
                     if (diffDays === 1) return { bg: '#d32f2f', color: '#ffffff' }; // 1d - red
                     if (diffDays === 2) return { bg: '#ff9800', color: '#ffffff' }; // 2d - orange
                     if (diffDays === 3) return { bg: '#ffc107', color: '#5d4037' }; // 3d - yellow
-                    if (diffDays <= 7) return { bg: '#4caf50', color: '#ffffff' }; // 4-7d - green
-                    return { bg: '#e0e0e0', color: '#757575' }; // 8d+ - gray
+                    if (diffDays <= 6) return { bg: '#4caf50', color: '#ffffff' }; // 4-6d - green (<1w)
+                    return { bg: '#e0e0e0', color: '#757575' }; // 7d+ - gray (1w+)
                   };
                   const pillStyle = getPillStyle();
                   
