@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, SwipeableDrawer, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material';
-import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth } from '@mui/icons-material';
+import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, SwipeableDrawer, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth, Today, Schedule } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { User } from 'firebase/auth';
 import { Todo } from '../types/todo';
@@ -32,6 +32,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isPostponedExpanded, setIsPostponedExpanded] = useState<boolean>(false);
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState<boolean>(false);
   const [dragFromCategory, setDragFromCategory] = useState<'today' | 'backlog' | 'postponed' | null>(null);
+  const [mobileTab, setMobileTab] = useState<'today' | 'postponed'>('today');
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -230,8 +231,78 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const postponedGroups = groupPostponedTodosByDate(postponedTodos, formatDateGroupTitle);
 
+  // Helper to render postponed list content (reused in both desktop and mobile views)
+  const renderPostponedListContent = () => (
+    <Box sx={{ mt: 1, pl: isMobile ? 0 : 2 }}>
+      {postponedGroups.map((group, groupIndex) => {
+        // Calculate days until this date
+        let daysLabel: string | null = null;
+        let diffDays = 0;
+        if (group.date && group.date !== 'No Date') {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const targetDate = new Date(group.date);
+          targetDate.setHours(0, 0, 0, 0);
+          diffDays = Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays >= 1 && diffDays <= 3) {
+            daysLabel = `in ${diffDays}d`;
+          } else if (diffDays >= 4 && diffDays <= 6) {
+            daysLabel = 'in <1w';
+          } else if (diffDays >= 7) {
+            daysLabel = '1w+';
+          }
+        }
+        
+        // Get pill color based on days - red/orange/yellow → green → gray
+        const getPillStyle = () => {
+          if (diffDays === 1) return { bg: '#d32f2f', color: '#ffffff' }; // 1d - red
+          if (diffDays === 2) return { bg: '#ff9800', color: '#ffffff' }; // 2d - orange
+          if (diffDays === 3) return { bg: '#ffc107', color: '#5d4037' }; // 3d - yellow
+          if (diffDays <= 6) return { bg: '#4caf50', color: '#ffffff' }; // 4-6d - green (<1w)
+          return { bg: '#e0e0e0', color: '#757575' }; // 7d+ - gray (1w+)
+        };
+        const pillStyle = getPillStyle();
+        
+        return (
+          <Box key={groupIndex} sx={{ mb: groupIndex < postponedGroups.length - 1 ? 2.5 : 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  fontSize: '0.95rem'
+                }}
+              >
+                {group.displayDate}
+              </Typography>
+              {daysLabel && (
+                <Box
+                  sx={{
+                    px: 0.75,
+                    py: 0.125,
+                    borderRadius: 1,
+                    backgroundColor: pillStyle.bg,
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    color: pillStyle.color,
+                  }}
+                >
+                  {daysLabel}
+                </Box>
+              )}
+            </Box>
+            <Box sx={{ '& > *': { mb: 0.5 } }}>
+              {renderNestedTasksInPostponed(group.parentTasks)}
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+
   return (
-    <Container maxWidth="md" sx={{ py: 2, px: { xs: 2.5, sm: 3, md: 4 } }}>
+    <Container maxWidth="md" sx={{ py: 2, px: { xs: 2.5, sm: 3, md: 4 }, pb: { xs: 10, sm: 2 } }}>
       <UserHeader 
         user={user} 
         isConnected={isConnected} 
@@ -240,192 +311,247 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onSyncNow={syncNow}
       />
 
-      {/* Today + Backlog - Main active tasks */}
-      <Box sx={{ mb: 3 }}>
-        <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
-          <NestedTodoSection
-            category="today"
-            todos={todayTodos}
-            title="Today"
-            onToggleTodo={toggleTodo}
-            onTodoClick={handleTodoClick}
-            animatingTaskIds={animatingTaskIds}
-            newTaskIds={newTaskIds}
-            completingTaskIds={completingTaskIds}
-            uncompletingTaskIds={uncompletingTaskIds}
-            shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-            badgeCount={todayTodoCount}
-          />
+      {/* Mobile: Conditional rendering based on selected tab */}
+      {isMobile ? (
+        <>
+          {mobileTab === 'today' ? (
+            <>
+              {/* Today + Backlog - Main active tasks */}
+              <Box sx={{ mb: 3 }}>
+                <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
+                  <NestedTodoSection
+                    category="today"
+                    todos={todayTodos}
+                    title="Today"
+                    onToggleTodo={toggleTodo}
+                    onTodoClick={handleTodoClick}
+                    animatingTaskIds={animatingTaskIds}
+                    newTaskIds={newTaskIds}
+                    completingTaskIds={completingTaskIds}
+                    uncompletingTaskIds={uncompletingTaskIds}
+                    shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                  />
 
-          {/* Backlog Section with Add Todo Form */}
-          <Box sx={{ mb: 0, mt: 2 }}>
-            <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
-              Backlog
-            </Typography>
-            
-            {/* Show AddTodoForm only on desktop */}
-            {!isMobile && <AddTodoForm onAddTodo={addTodo} />}
+                  {/* Backlog Section */}
+                  <Box sx={{ mb: 0, mt: 2 }}>
+                    <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
+                      Backlog
+                    </Typography>
 
-            <NestedTodoSection
-              category="backlog"
-              todos={backlogTodos}
-              title=""
-              onToggleTodo={toggleTodo}
-              onTodoClick={handleTodoClick}
-              animatingTaskIds={animatingTaskIds}
-              newTaskIds={newTaskIds}
-              completingTaskIds={completingTaskIds}
-              uncompletingTaskIds={uncompletingTaskIds}
-              shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-            />
-          </Box>
-        </DragDropContext>
-      </Box>
-
-      {/* Postponed Tasks - Separate section */}
-      {postponedTodos.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              py: 0.5,
-              borderRadius: 1,
-            }}
-          >
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                cursor: 'pointer',
-                flexGrow: 1,
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                },
-                borderRadius: 1,
-              }}
-              onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
-            >
-              <IconButton size="small">
-                {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-              <Typography variant="overline" sx={{ mb: 0, fontWeight: 600 }}>
-                Postponed ({postponedTodos.length})
-              </Typography>
-            </Box>
-            
-            {/* View Mode Toggle */}
-            <ToggleButtonGroup
-              value={postponedViewMode}
-              exclusive
-              onChange={handleViewModeChange}
-              size="small"
-              sx={{ ml: 1 }}
-            >
-              <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
-                <Tooltip title="List View">
-                  <ViewList fontSize="small" />
-                </Tooltip>
-              </ToggleButton>
-              <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
-                <Tooltip title="Calendar View">
-                  <CalendarMonth fontSize="small" />
-                </Tooltip>
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-          
-          <Collapse in={isPostponedExpanded}>
-            {postponedViewMode === 'list' ? (
-              <Box sx={{ mt: 1, pl: 2 }}>
-                {postponedGroups.map((group, groupIndex) => {
-                  // Calculate days until this date
-                  let daysLabel: string | null = null;
-                  let diffDays = 0;
-                  if (group.date && group.date !== 'No Date') {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const targetDate = new Date(group.date);
-                    targetDate.setHours(0, 0, 0, 0);
-                    diffDays = Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    if (diffDays >= 1 && diffDays <= 3) {
-                      daysLabel = `in ${diffDays}d`;
-                    } else if (diffDays >= 4 && diffDays <= 6) {
-                      daysLabel = 'in <1w';
-                    } else if (diffDays >= 7) {
-                      daysLabel = '1w+';
-                    }
-                  }
-                  
-                  // Get pill color based on days - red/orange/yellow → green → gray
-                  const getPillStyle = () => {
-                    if (diffDays === 1) return { bg: '#d32f2f', color: '#ffffff' }; // 1d - red
-                    if (diffDays === 2) return { bg: '#ff9800', color: '#ffffff' }; // 2d - orange
-                    if (diffDays === 3) return { bg: '#ffc107', color: '#5d4037' }; // 3d - yellow
-                    if (diffDays <= 6) return { bg: '#4caf50', color: '#ffffff' }; // 4-6d - green (<1w)
-                    return { bg: '#e0e0e0', color: '#757575' }; // 7d+ - gray (1w+)
-                  };
-                  const pillStyle = getPillStyle();
-                  
-                  return (
-                    <Box key={groupIndex} sx={{ mb: groupIndex < postponedGroups.length - 1 ? 2.5 : 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography 
-                          variant="subtitle1" 
-                          sx={{ 
-                            fontWeight: 600,
-                            color: 'text.primary',
-                            fontSize: '0.95rem'
-                          }}
-                        >
-                          {group.displayDate}
-                        </Typography>
-                        {daysLabel && (
-                          <Box
-                            sx={{
-                              px: 0.75,
-                              py: 0.125,
-                              borderRadius: 1,
-                              backgroundColor: pillStyle.bg,
-                              fontSize: '0.65rem',
-                              fontWeight: 500,
-                              color: pillStyle.color,
-                            }}
-                          >
-                            {daysLabel}
-                          </Box>
-                        )}
-                      </Box>
-                      <Box sx={{ '& > *': { mb: 0.5 } }}>
-                        {renderNestedTasksInPostponed(group.parentTasks)}
-                      </Box>
-                    </Box>
-                  );
-                })}
+                    <NestedTodoSection
+                      category="backlog"
+                      todos={backlogTodos}
+                      title=""
+                      onToggleTodo={toggleTodo}
+                      onTodoClick={handleTodoClick}
+                      animatingTaskIds={animatingTaskIds}
+                      newTaskIds={newTaskIds}
+                      completingTaskIds={completingTaskIds}
+                      uncompletingTaskIds={uncompletingTaskIds}
+                      shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                    />
+                  </Box>
+                </DragDropContext>
               </Box>
-            ) : (
-              <PostponedCalendarView
-                todos={postponedTodos}
-                onTodoClick={handleTodoClick}
-              />
-            )}
-          </Collapse>
-        </Box>
-      )}
 
-      {/* Completed Tasks - Less visible */}
-      {completedTodos.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <CompletedTodosSection
-            completedTodos={completedTodos}
-            onToggleTodo={toggleTodo}
-            onTodoClick={handleTodoClick}
-            animatingTaskIds={animatingTaskIds}
-            newTaskIds={newTaskIds}
-            completingTaskIds={completingTaskIds}
-            uncompletingTaskIds={uncompletingTaskIds}
-          />
-        </Box>
+              {/* Completed Tasks */}
+              {completedTodos.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <CompletedTodosSection
+                    completedTodos={completedTodos}
+                    onToggleTodo={toggleTodo}
+                    onTodoClick={handleTodoClick}
+                    animatingTaskIds={animatingTaskIds}
+                    newTaskIds={newTaskIds}
+                    completingTaskIds={completingTaskIds}
+                    uncompletingTaskIds={uncompletingTaskIds}
+                  />
+                </Box>
+              )}
+            </>
+          ) : (
+            /* Mobile Postponed Tab */
+            <Box sx={{ mb: 3 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  py: 0.5,
+                  mb: 1,
+                }}
+              >
+                <Typography variant="overline" sx={{ fontWeight: 600 }}>
+                  Postponed ({postponedTodos.length})
+                </Typography>
+                
+                {/* View Mode Toggle */}
+                <ToggleButtonGroup
+                  value={postponedViewMode}
+                  exclusive
+                  onChange={handleViewModeChange}
+                  size="small"
+                >
+                  <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
+                    <ViewList fontSize="small" />
+                  </ToggleButton>
+                  <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
+                    <CalendarMonth fontSize="small" />
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+              
+              {postponedTodos.length > 0 ? (
+                postponedViewMode === 'list' ? (
+                  renderPostponedListContent()
+                ) : (
+                  <PostponedCalendarView
+                    todos={postponedTodos}
+                    onTodoClick={handleTodoClick}
+                  />
+                )
+              ) : (
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  py: 4, 
+                  color: 'text.secondary' 
+                }}>
+                  <Schedule sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
+                  <Typography variant="body2">
+                    No postponed tasks
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </>
+      ) : (
+        /* Desktop: Show all sections */
+        <>
+          {/* Today + Backlog - Main active tasks */}
+          <Box sx={{ mb: 3 }}>
+            <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
+              <NestedTodoSection
+                category="today"
+                todos={todayTodos}
+                title="Today"
+                onToggleTodo={toggleTodo}
+                onTodoClick={handleTodoClick}
+                animatingTaskIds={animatingTaskIds}
+                newTaskIds={newTaskIds}
+                completingTaskIds={completingTaskIds}
+                uncompletingTaskIds={uncompletingTaskIds}
+                shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                badgeCount={todayTodoCount}
+              />
+
+              {/* Backlog Section with Add Todo Form */}
+              <Box sx={{ mb: 0, mt: 2 }}>
+                <Typography variant="overline" gutterBottom sx={{ mb: 1, fontWeight: 600 }}>
+                  Backlog
+                </Typography>
+                
+                <AddTodoForm onAddTodo={addTodo} />
+
+                <NestedTodoSection
+                  category="backlog"
+                  todos={backlogTodos}
+                  title=""
+                  onToggleTodo={toggleTodo}
+                  onTodoClick={handleTodoClick}
+                  animatingTaskIds={animatingTaskIds}
+                  newTaskIds={newTaskIds}
+                  completingTaskIds={completingTaskIds}
+                  uncompletingTaskIds={uncompletingTaskIds}
+                  shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                />
+              </Box>
+            </DragDropContext>
+          </Box>
+
+          {/* Postponed Tasks - Separate section */}
+          {postponedTodos.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  py: 0.5,
+                  borderRadius: 1,
+                }}
+              >
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    cursor: 'pointer',
+                    flexGrow: 1,
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                    borderRadius: 1,
+                  }}
+                  onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
+                >
+                  <IconButton size="small">
+                    {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                  <Typography variant="overline" sx={{ mb: 0, fontWeight: 600 }}>
+                    Postponed ({postponedTodos.length})
+                  </Typography>
+                </Box>
+                
+                {/* View Mode Toggle */}
+                <ToggleButtonGroup
+                  value={postponedViewMode}
+                  exclusive
+                  onChange={handleViewModeChange}
+                  size="small"
+                  sx={{ ml: 1 }}
+                >
+                  <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
+                    <Tooltip title="List View">
+                      <ViewList fontSize="small" />
+                    </Tooltip>
+                  </ToggleButton>
+                  <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
+                    <Tooltip title="Calendar View">
+                      <CalendarMonth fontSize="small" />
+                    </Tooltip>
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+              
+              <Collapse in={isPostponedExpanded}>
+                {postponedViewMode === 'list' ? (
+                  <Box sx={{ pl: 2 }}>
+                    {renderPostponedListContent()}
+                  </Box>
+                ) : (
+                  <PostponedCalendarView
+                    todos={postponedTodos}
+                    onTodoClick={handleTodoClick}
+                  />
+                )}
+              </Collapse>
+            </Box>
+          )}
+
+          {/* Completed Tasks - Less visible */}
+          {completedTodos.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <CompletedTodosSection
+                completedTodos={completedTodos}
+                onToggleTodo={toggleTodo}
+                onTodoClick={handleTodoClick}
+                animatingTaskIds={animatingTaskIds}
+                newTaskIds={newTaskIds}
+                completingTaskIds={completingTaskIds}
+                uncompletingTaskIds={uncompletingTaskIds}
+              />
+            </Box>
+          )}
+        </>
       )}
 
       <TodoDetailsDrawer
@@ -437,21 +563,93 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onDelete={handleDeleteWrapper}
       />
 
-      {/* Mobile FAB - positioned in bottom right corner */}
-      {isMobile && (
+      {/* Mobile FAB - positioned above bottom navigation */}
+      {isMobile && mobileTab === 'today' && (
         <Fab
           color="primary"
           aria-label="add task"
           onClick={() => setIsAddDrawerOpen(true)}
           sx={{
             position: 'fixed',
-            bottom: 16,
+            bottom: 72,
             right: 16,
             zIndex: theme.zIndex.fab,
           }}
         >
           <Add />
         </Fab>
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <Paper 
+          sx={{ 
+            position: 'fixed', 
+            bottom: 0, 
+            left: 0, 
+            right: 0,
+            zIndex: theme.zIndex.appBar,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+          }} 
+          elevation={3}
+        >
+          <BottomNavigation
+            value={mobileTab}
+            onChange={(_event, newValue) => setMobileTab(newValue)}
+            showLabels
+            sx={{
+              height: 56,
+              '& .MuiBottomNavigationAction-root': {
+                minWidth: 0,
+                py: 1,
+              },
+              '& .MuiBottomNavigationAction-label': {
+                fontSize: '0.75rem',
+                '&.Mui-selected': {
+                  fontSize: '0.75rem',
+                },
+              },
+            }}
+          >
+            <BottomNavigationAction 
+              label="Today" 
+              value="today" 
+              icon={
+                <Box sx={{ position: 'relative' }}>
+                  <Today />
+                  {todayTodoCount > 0 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -6,
+                        right: -10,
+                        minWidth: 18,
+                        height: 18,
+                        borderRadius: '9px',
+                        backgroundColor: 'error.main',
+                        color: 'white',
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        px: 0.5,
+                      }}
+                    >
+                      {todayTodoCount > 99 ? '99+' : todayTodoCount}
+                    </Box>
+                  )}
+                </Box>
+              } 
+            />
+            <BottomNavigationAction 
+              label="Postponed" 
+              value="postponed" 
+              icon={<Schedule />} 
+            />
+          </BottomNavigation>
+        </Paper>
       )}
 
       {/* Mobile Bottom Drawer for Add Task */}

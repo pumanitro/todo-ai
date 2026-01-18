@@ -156,10 +156,15 @@
 
 ## Mobile UI Pattern
 - **Add Task Form**: Hidden on mobile (`isMobile` breakpoint detection)
-- **Floating Action Button (FAB)**: Fixed position bottom-right corner, only visible on mobile
+- **Floating Action Button (FAB)**: Fixed position bottom-right corner (above nav bar), only visible on mobile "Today" tab
 - **Bottom Drawer**: SwipeableDrawer from bottom when FAB clicked, contains AddTodoForm
 - **Auto-Close**: Drawer closes automatically after task creation
 - **Responsive Breakpoint**: `theme.breakpoints.down('sm')` for mobile detection
+- **Bottom Navigation**: 2-tab navigation bar for mobile with Today and Postponed tabs
+- **Today Tab**: Shows Today, Backlog, and Completed sections
+- **Postponed Tab**: Shows only Postponed tasks with list/calendar toggle
+- **Badge Indicators**: Both tabs show count badges (Today count in red, Postponed count in gray)
+- **Container Padding**: Extra bottom padding (pb: 10) on mobile to account for fixed nav bar
 
 ## Text Rendering & Links
 - **URL Detection**: Automatic detection of HTTP/HTTPS URLs in task names and descriptions using regex
@@ -193,7 +198,7 @@
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v62` (updated for TanStack Query offline support)
+- Cache version: `todo-flow-v64` (updated for mobile bottom navigation)
 - Service worker handles offline functionality + background sync
 - Always update cache version for significant code changes
 

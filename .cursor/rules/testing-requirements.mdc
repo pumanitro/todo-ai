@@ -1,0 +1,27 @@
+---
+description: Testing Requirements - Always run e2e tests after implementing features
+alwaysApply: true
+---
+
+# Testing Requirements
+
+After implementing any new functionality or making changes to the Todo AI app, always run Cypress e2e tests to verify the changes work correctly.
+
+## Commands
+- `npm run cy:parallel` - **DEFAULT: Always use this** - Runs tests in 7 parallel threads for faster execution
+- `npm run cy:run` - Headless testing (single thread, slower but more reliable)
+- `npm run cy:run:headed` - Headed testing (see browser)
+- `npm run cy:open` - Interactive testing mode
+
+## Note on Parallel Execution
+Parallel tests may show login race condition failures in `beforeEach` hooks when multiple tests try to authenticate with the same Firebase test account simultaneously. These failures are infrastructure-related, not code bugs. If you see failures only in `beforeEach` login hooks, the actual feature code is likely fine.
+
+## When to Test
+- After implementing new features
+- After bug fixes
+- After refactoring existing code
+- Before considering a task complete
+
+## Test Location
+- Test files are in `cypress/e2e/`
+- Custom commands in `cypress/support/commands.ts`
