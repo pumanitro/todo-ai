@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Box, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge, Chip, Tooltip } from '@mui/material';
+import { Logout, CloudOff, Sync } from '@mui/icons-material';
 import { User, signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import UltraFocus from './UltraFocus';
@@ -8,9 +8,18 @@ import UltraFocus from './UltraFocus';
 interface UserHeaderProps {
   user: User;
   isConnected: boolean;
+  isOnline?: boolean;
+  hasPendingSync?: boolean;
+  onSyncNow?: () => void;
 }
 
-const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
+const UserHeader: React.FC<UserHeaderProps> = ({ 
+  user, 
+  isConnected, 
+  isOnline = true, 
+  hasPendingSync = false,
+  onSyncNow 
+}) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -31,9 +40,69 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
     }
   };
 
+  // Determine connection status for badge
+  const getBadgeColor = () => {
+    if (!isOnline) return '#f44336'; // red - offline
+    if (hasPendingSync) return '#ff9800'; // orange - has pending changes
+    if (isConnected) return '#44b700'; // green - connected
+    return '#ff9800'; // orange - connecting
+  };
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <UltraFocus user={user} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <UltraFocus user={user} />
+        
+        {/* Offline indicator chip */}
+        {!isOnline && (
+          <Tooltip title="You're offline. Changes will sync when you're back online.">
+            <Chip
+              icon={<CloudOff sx={{ fontSize: 16 }} />}
+              label="Offline"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                color: '#f44336',
+                borderColor: 'rgba(244, 67, 54, 0.3)',
+                border: '1px solid',
+                fontSize: '0.75rem',
+                height: 24,
+                '& .MuiChip-icon': {
+                  color: '#f44336',
+                },
+              }}
+            />
+          </Tooltip>
+        )}
+        
+        {/* Pending sync indicator */}
+        {isOnline && hasPendingSync && (
+          <Tooltip title="Syncing pending changes...">
+            <Chip
+              icon={<Sync sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} />}
+              label="Syncing..."
+              size="small"
+              onClick={onSyncNow}
+              sx={{
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                color: '#ff9800',
+                borderColor: 'rgba(255, 152, 0, 0.3)',
+                border: '1px solid',
+                fontSize: '0.75rem',
+                height: 24,
+                cursor: 'pointer',
+                '& .MuiChip-icon': {
+                  color: '#ff9800',
+                },
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }}
+            />
+          </Tooltip>
+        )}
+      </Box>
       
       <IconButton
         onClick={handleClick}
@@ -49,8 +118,8 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
           variant="dot"
           sx={{
             '& .MuiBadge-badge': {
-              backgroundColor: isConnected ? '#44b700' : '#ff9800',
-              color: isConnected ? '#44b700' : '#ff9800',
+              backgroundColor: getBadgeColor(),
+              color: getBadgeColor(),
               boxShadow: '0 0 0 2px white',
               '&::after': {
                 position: 'absolute',
@@ -59,7 +128,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
                 width: '100%',
                 height: '100%',
                 borderRadius: '50%',
-                animation: !isConnected ? 'ripple 1.2s infinite ease-in-out' : 'none',
+                animation: (!isOnline || hasPendingSync) ? 'ripple 1.2s infinite ease-in-out' : 'none',
                 border: '1px solid currentColor',
                 content: '""',
               },
@@ -132,4 +201,4 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user, isConnected }) => {
   );
 };
 
-export default UserHeader; 
+export default UserHeader;

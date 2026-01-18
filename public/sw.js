@@ -10,11 +10,12 @@
  *  ✅   Cleans up old versions automatically
  *  ✅   Safe fallbacks (never serves a cached 404)
  *  ✅   Leaves cross-origin assets (e.g. Google Fonts) to the browser
+ *  ✅   Background sync for offline operations
  *  -----------------------------------------------------------
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-flow-v60';
+const CACHE_NAME = 'todo-flow-v62';
 
 /**
  * In production your build pipeline should replace
@@ -116,15 +117,47 @@ self.addEventListener('fetch', (event) => {
 });
 
 /* ---------------------------------------------------------- */
-/*  OPTIONAL: Background-sync stub                            */
+/*  BACKGROUND SYNC - retry failed operations when online     */
 /* ---------------------------------------------------------- */
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
+  if (event.tag === 'todo-sync') {
     event.waitUntil(doBackgroundSync());
   }
 });
 
-function doBackgroundSync() {
-  // Expand this to replay queued "todo" actions, etc.
-  console.log('[SW] Background sync triggered');
+async function doBackgroundSync() {
+  console.log('[SW] Background sync triggered - notifying clients');
+  
+  // Notify all clients to sync their pending operations
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => {
+    client.postMessage({ type: 'SYNC_PENDING_OPERATIONS' });
+  });
 }
+
+/* ---------------------------------------------------------- */
+/*  MESSAGE - handle messages from the main app               */
+/* ---------------------------------------------------------- */
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'REGISTER_SYNC') {
+    // Request background sync when operations are queued
+    if ('sync' in self.registration) {
+      self.registration.sync.register('todo-sync').catch((err) => {
+        console.log('[SW] Background sync registration failed:', err);
+      });
+    }
+  }
+});
+
+/* ---------------------------------------------------------- */
+/*  PERIODIC SYNC - check for updates periodically            */
+/* ---------------------------------------------------------- */
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'todo-periodic-sync') {
+    event.waitUntil(doBackgroundSync());
+  }
+});

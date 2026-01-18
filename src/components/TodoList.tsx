@@ -40,6 +40,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const {
     todos,
     isConnected,
+    isOnline,
+    hasPendingSync,
+    syncNow,
     animateTaskTransition,
     animatingTaskIds,
     movedTasksNotification,
@@ -229,7 +232,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2.5, sm: 3, md: 4 } }}>
-      <UserHeader user={user} isConnected={isConnected} />
+      <UserHeader 
+        user={user} 
+        isConnected={isConnected} 
+        isOnline={isOnline}
+        hasPendingSync={hasPendingSync}
+        onSyncNow={syncNow}
+      />
 
       {/* Today + Backlog - Main active tasks */}
       <Box sx={{ mb: 3 }}>

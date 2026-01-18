@@ -4,6 +4,7 @@
 
 ### Services Layer
 - **TodoService** (`src/services/todoService.ts`) - Firebase operations (CRUD, listeners)
+- **QueryClient** (`src/services/queryClient.ts`) - TanStack Query setup with IndexedDB persistence
 - All database operations centralized in static methods
 - Handles batch updates and blocked task reference cleanup
 
@@ -192,11 +193,31 @@
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v39` (updated for postponed view toggle feature)
-- Service worker handles offline functionality only
+- Cache version: `todo-flow-v62` (updated for TanStack Query offline support)
+- Service worker handles offline functionality + background sync
 - Always update cache version for significant code changes
+
+## Offline Support & Sync (TanStack Query)
+- **TanStack Query**: Uses `@tanstack/react-query` with `@tanstack/react-query-persist-client`
+- **IndexedDB Persistence**: Query cache persisted to IndexedDB via `idb-keyval` for offline access
+- **Network Mode**: `offlineFirst` - shows cached data immediately, syncs when online
+- **Optimistic Updates**: All mutations use optimistic updates with rollback on error
+- **Paused Mutations**: Mutations automatically pause when offline, resume when online
+- **Auto-Resume**: `PersistQueryClientProvider` resumes paused mutations on app reload
+- **Sync Status**: `hasPendingSync` checks for paused mutations via `queryClient.getMutationCache()`
+- **Online Detection**: `isOnline` flag tracks network status via navigator.onLine + events
+- **UI Indicators**: Offline chip (red) and Syncing chip (orange) in UserHeader
+- **Cache Duration**: 7-day cache retention, 24-hour stale time
+- **Cache Buster**: Change `buster` in `persistOptions` to invalidate cached data
 
 ## User Settings
 - **Storage Path**: `users/${uid}/settings/` in Firebase Realtime Database
 - **postponedViewMode**: User preference for postponed section display ('list' | 'calendar')
 - **Hook**: `usePostponedViewMode` manages loading/saving view mode preference
+
+## E2E Testing (Cypress)
+- **Framework**: Cypress for functional E2E click testing
+- **Test Credentials**: Stored in env vars `CYPRESS_TEST_EMAIL` and `CYPRESS_TEST_PASSWORD`
+- **Custom Commands**: `cy.login()`, `cy.logout()`, `cy.addTodo()`, `cy.waitForAppLoad()`
+- **Test Suites**: auth, todo-crud, todo-categories, drag-drop, task-blocking, completed-tasks, offline
+- **Scripts**: `npm run cy:open` (interactive), `npm run cy:run` (headless), `npm run cy:run:headed`

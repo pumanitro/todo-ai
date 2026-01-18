@@ -12,15 +12,17 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@mui/icons-material": "^5.14.19",
     "@mui/material": "^5.14.20",
+    "@tanstack/react-query": "^5.90.18",
+    "@tanstack/react-query-persist-client": "^5.90.20",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.68",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
     "animate.css": "^4.1.1",
     "firebase": "^10.14.1",
+    "idb-keyval": "^6.2.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -32,7 +34,11 @@
     "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "cy:run:headed": "cypress run --headed",
+    "cy:parallel": "cypress-parallel -s cy:run -t 7 -d cypress/e2e"
   },
   "eslintConfig": {
     "extends": [
@@ -51,5 +57,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "cypress": "^15.9.0",
+    "cypress-parallel": "^0.15.0",
+    "dotenv": "^17.2.3"
   }
 }
