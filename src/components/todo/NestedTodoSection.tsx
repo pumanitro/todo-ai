@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Typography, Badge } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Badge, IconButton, Menu, MenuItem, Chip } from '@mui/material';
+import { FilterList, Close } from '@mui/icons-material';
 import { Droppable } from '@hello-pangea/dnd';
 import { Todo, TodoCategory } from '../../types/todo';
 import TodoItem from './TodoItem';
@@ -16,6 +17,10 @@ interface NestedTodoSectionProps {
   completingTaskIds?: Set<string>;
   uncompletingTaskIds?: Set<string>;
   badgeCount?: number;
+  // Hashtag filter props
+  allHashtags?: string[];
+  selectedHashtag?: string | null;
+  onHashtagSelect?: (hashtag: string | null) => void;
 }
 
 interface TodoHierarchy {
@@ -35,7 +40,28 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   completingTaskIds = new Set(),
   uncompletingTaskIds = new Set(),
   badgeCount,
+  allHashtags = [],
+  selectedHashtag,
+  onHashtagSelect,
 }) => {
+  // Menu anchor state for hashtag filter
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const filterMenuOpen = Boolean(filterAnchorEl);
+
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleHashtagSelect = (hashtag: string | null) => {
+    if (onHashtagSelect) {
+      onHashtagSelect(hashtag);
+    }
+    handleFilterClose();
+  };
 
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
@@ -188,8 +214,9 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
 
   return (
     <Box sx={{ mb: title ? 2 : 1 }}>
-              {title && (
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+      {title && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="overline" sx={{ fontWeight: 600 }}>
               {title}
             </Typography>
@@ -208,7 +235,81 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
               />
             )}
           </Box>
-        )}
+          
+          {/* Hashtag Filter */}
+          {allHashtags.length > 0 && onHashtagSelect && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {selectedHashtag && (
+                <Chip
+                  label={selectedHashtag}
+                  size="small"
+                  onDelete={() => handleHashtagSelect(null)}
+                  deleteIcon={<Close fontSize="small" />}
+                  sx={{
+                    height: 24,
+                    fontSize: '0.75rem',
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '& .MuiChip-deleteIcon': {
+                      fontSize: '0.875rem',
+                      color: 'white',
+                      '&:hover': {
+                        color: 'rgba(255,255,255,0.7)',
+                      },
+                    },
+                  }}
+                />
+              )}
+              <IconButton
+                size="small"
+                onClick={handleFilterClick}
+                sx={{
+                  color: selectedHashtag ? 'primary.main' : 'text.secondary',
+                  p: 0.5,
+                }}
+              >
+                <FilterList fontSize="small" />
+              </IconButton>
+              <Menu
+                anchorEl={filterAnchorEl}
+                open={filterMenuOpen}
+                onClose={handleFilterClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                {selectedHashtag && (
+                  <MenuItem 
+                    onClick={() => handleHashtagSelect(null)}
+                    sx={{ color: 'error.main', fontSize: '0.875rem' }}
+                  >
+                    Clear filter
+                  </MenuItem>
+                )}
+                {allHashtags.map((hashtag) => (
+                  <MenuItem
+                    key={hashtag}
+                    onClick={() => handleHashtagSelect(hashtag)}
+                    selected={selectedHashtag === hashtag}
+                    sx={{ 
+                      fontSize: '0.875rem',
+                      color: 'primary.main',
+                      fontWeight: selectedHashtag === hashtag ? 600 : 400,
+                    }}
+                  >
+                    {hashtag}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          )}
+        </Box>
+      )}
 
       <Droppable droppableId={category}>
         {(provided, snapshot) => (

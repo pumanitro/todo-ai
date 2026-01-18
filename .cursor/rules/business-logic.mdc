@@ -173,6 +173,23 @@
 - **Click Prevention**: Link clicks use stopPropagation to prevent task selection when clicking links
 - **Preview Mode**: Task descriptions show rendered preview with clickable links below edit field
 - **Consistent Styling**: Links use primary theme color with underline decoration
+- **Hashtag Highlighting**: #tags in task text automatically highlighted in blue (primary.main color)
+
+## Hashtag Filter
+- **Filter Location**: Right-aligned filter icon next to "Today" section header
+- **Hashtag Extraction**: Extracts unique #tags from all task texts (case-insensitive)
+- **Filter Menu**: Dropdown menu shows all available hashtags + "Clear filter" option
+- **Active Filter Indicator**: Selected hashtag shown as chip next to filter icon
+- **Global Filter**: Applies to all views (Today, Backlog, Postponed, Completed)
+- **Utility Functions**: `extractHashtagsFromTexts()` and `textContainsHashtag()` in linkUtils.tsx
+
+## Hashtag Autocomplete
+- **Location**: Add Task input field (AddTodoForm component)
+- **Trigger**: Shows suggestions when typing `#` followed by characters
+- **Matching**: Filters existing hashtags that start with the typed partial tag
+- **Selection**: Click suggestion or use Arrow keys + Enter/Tab to select
+- **Keyboard Support**: Arrow Up/Down to navigate, Enter/Tab to select, Escape to dismiss
+- **Insertion**: Selected hashtag replaces partial input and adds trailing space
 
 ## Progressive Web App (PWA) Features
 - **Service Worker**: `public/sw.js` caches resources for offline functionality
@@ -198,7 +215,7 @@
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v64` (updated for mobile bottom navigation)
+- Cache version: `todo-flow-v68` (updated for hashtag autocomplete)
 - Service worker handles offline functionality + background sync
 - Always update cache version for significant code changes
 

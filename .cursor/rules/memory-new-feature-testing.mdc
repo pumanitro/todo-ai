@@ -1,0 +1,22 @@
+---
+description: Always create separate Cypress test for new functionalities
+globs: 
+alwaysApply: true
+---
+
+# New Feature Testing Requirement
+
+When implementing new functionality in the Todo AI app, always create a dedicated Cypress E2E test file or add test cases to an existing relevant test file.
+
+## Guidelines
+
+1. **Create dedicated test file** for significant new features (e.g., `hashtag-filter.cy.ts`)
+2. **Add test cases to existing files** for smaller enhancements that fit existing test categories
+3. **Test location**: `cypress/e2e/`
+4. **Test naming**: Use descriptive names that match the feature (e.g., `feature-name.cy.ts`)
+
+## Test Structure
+
+- Use `beforeEach` with `cy.login()` for authenticated tests
+- Clean up test data after tests complete
+- Follow existing test patterns in the codebase

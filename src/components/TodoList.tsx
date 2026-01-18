@@ -21,6 +21,7 @@ import { useBadgeManager } from '../hooks/useBadgeManager';
 import { usePostponedViewMode, PostponedViewMode } from '../hooks/usePostponedViewMode';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
 import { formatDateGroupTitle } from '../utils/dateUtils';
+import { extractHashtagsFromTexts, textContainsHashtag } from '../utils/linkUtils';
 
 interface TodoListProps {
   user: User;
@@ -33,6 +34,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState<boolean>(false);
   const [dragFromCategory, setDragFromCategory] = useState<'today' | 'backlog' | 'postponed' | null>(null);
   const [mobileTab, setMobileTab] = useState<'today' | 'postponed'>('today');
+  const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -222,11 +224,20 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     );
   };
 
-  // Filter todos by category
-  const todayTodos = todos.filter(todo => !todo.completed && todo.category === 'today');
-  const postponedTodos = todos.filter(todo => !todo.completed && todo.category === 'postponed');
-  const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
-  const completedTodos = todos.filter(todo => todo.completed);
+  // Extract all unique hashtags from all todos
+  const allHashtags = extractHashtagsFromTexts(todos.map(t => t.text));
+
+  // Helper function to apply hashtag filter
+  const applyHashtagFilter = (todoList: Todo[]) => {
+    if (!selectedHashtag) return todoList;
+    return todoList.filter(todo => textContainsHashtag(todo.text, selectedHashtag));
+  };
+
+  // Filter todos by category, then apply hashtag filter
+  const todayTodos = applyHashtagFilter(todos.filter(todo => !todo.completed && todo.category === 'today'));
+  const postponedTodos = applyHashtagFilter(todos.filter(todo => !todo.completed && todo.category === 'postponed'));
+  const backlogTodos = applyHashtagFilter(todos.filter(todo => !todo.completed && todo.category === 'backlog'));
+  const completedTodos = applyHashtagFilter(todos.filter(todo => todo.completed));
 
   // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const postponedGroups = groupPostponedTodosByDate(postponedTodos, formatDateGroupTitle);
@@ -330,6 +341,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     completingTaskIds={completingTaskIds}
                     uncompletingTaskIds={uncompletingTaskIds}
                     shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                    allHashtags={allHashtags}
+                    selectedHashtag={selectedHashtag}
+                    onHashtagSelect={setSelectedHashtag}
                   />
 
                   {/* Backlog Section */}
@@ -443,6 +457,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 uncompletingTaskIds={uncompletingTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
                 badgeCount={todayTodoCount}
+                allHashtags={allHashtags}
+                selectedHashtag={selectedHashtag}
+                onHashtagSelect={setSelectedHashtag}
               />
 
               {/* Backlog Section with Add Todo Form */}
@@ -451,7 +468,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                   Backlog
                 </Typography>
                 
-                <AddTodoForm onAddTodo={addTodo} />
+                <AddTodoForm onAddTodo={addTodo} allHashtags={allHashtags} />
 
                 <NestedTodoSection
                   category="backlog"
@@ -675,7 +692,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             onAddTodo={(text, dueDate) => {
               addTodo(text, dueDate);
               setIsAddDrawerOpen(false);
-            }} 
+            }}
+            allHashtags={allHashtags}
           />
         </Box>
       </SwipeableDrawer>
