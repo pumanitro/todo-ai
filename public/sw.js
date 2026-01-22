@@ -15,7 +15,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-flow-v78';
+const CACHE_NAME = 'todo-flow-v79';
 
 /**
  * In production your build pipeline should replace
@@ -37,9 +37,10 @@ const PRECACHE_ASSETS = [
 /*  INSTALL – stash the precache list                         */
 /* ---------------------------------------------------------- */
 self.addEventListener('install', (event) => {
-  // Activate the new SW as soon as it finishes installing
-  self.skipWaiting();
-
+  // Don't auto-skipWaiting - let the app control when to activate
+  // This allows us to show an "Update available" banner to the user
+  // The new SW will wait until the user clicks "Update Now"
+  
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );

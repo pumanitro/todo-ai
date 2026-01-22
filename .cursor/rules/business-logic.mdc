@@ -215,9 +215,16 @@
 - **Badge Management**: `useBadgeManager` hook + `badgeUtils.ts` utilities handle all badge operations
 
 ## PWA Cache Management
-- Cache version: `todo-flow-v68` (updated for hashtag autocomplete)
+- Cache version: `todo-flow-v79` (current)
 - Service worker handles offline functionality + background sync
 - Always update cache version for significant code changes
+
+## PWA Update Banner
+- **Detection Hook**: `useServiceWorker` detects waiting service workers
+- **Update Banner**: Non-intrusive snackbar appears when new version available
+- **User Control**: Service worker waits until user clicks "Update Now" (no auto-skipWaiting on install)
+- **Seamless Reload**: Page auto-reloads after SW activation (controllerchange event)
+- **Periodic Checks**: Updates checked every 60s when tab visible + on visibility change
 
 ## Offline Support & Sync (TanStack Query)
 - **TanStack Query**: Uses `@tanstack/react-query` with `@tanstack/react-query-persist-client`

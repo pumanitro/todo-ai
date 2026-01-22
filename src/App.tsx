@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import 'animate.css';
 import { theme } from './theme/theme';
@@ -9,10 +8,13 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import TodoList from './components/TodoList';
 import Login from './components/Login';
 import { queryClient, persistOptions } from './services/queryClient';
+import { useServiceWorker } from './hooks/useServiceWorker';
+import UpdateBanner from './components/UpdateBanner';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { updateAvailable, applyUpdate } = useServiceWorker();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -53,6 +55,7 @@ const App: React.FC = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         {user ? <TodoList user={user} /> : <Login />}
+        <UpdateBanner open={updateAvailable} onUpdate={applyUpdate} />
       </ThemeProvider>
     </PersistQueryClientProvider>
   );
