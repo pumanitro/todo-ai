@@ -145,7 +145,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   const emptyState = getEmptyStateMessage();
 
   const renderTodoWithChildren = (todo: Todo, dragIndex: number, children?: Todo[]) => (
-    <React.Fragment key={todo.id}>
+    <React.Fragment key={todo.stableKey || todo.id}>
       {/* Parent Task - standalone in its own Box */}
       <Box sx={{ mb: 0.5 }}>
         <TodoItem
@@ -155,7 +155,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
           onClick={onTodoClick}
           isDraggable={true}
           isAnimating={animatingTaskIds.has(todo.id)}
-          isNewTask={newTaskIds.has(todo.id)}
+          isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
           isCompletingTask={completingTaskIds.has(todo.id)}
           isUncompletingTask={uncompletingTaskIds.has(todo.id)}
           blockedChildren={children || []}
@@ -179,7 +179,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
           />
           
           {children.map((child, childIndex) => (
-            <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
+            <Box key={child.stableKey || child.id} sx={{ mb: 0.5, position: 'relative' }}>
               {/* Horizontal connector line */}
               <Box 
                 sx={{ 
@@ -201,7 +201,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
                 onClick={onTodoClick}
                 isDraggable={false}
                 isAnimating={animatingTaskIds.has(child.id)}
-                isNewTask={newTaskIds.has(child.id)}
+                isNewTask={newTaskIds.has(child.stableKey || child.id)}
                 isCompletingTask={completingTaskIds.has(child.id)}
                 isUncompletingTask={uncompletingTaskIds.has(child.id)}
               />

@@ -110,7 +110,7 @@ const TodoSection: React.FC<TodoSectionProps> = ({
               <Box sx={{ '& > *': { mb: 0.5 } }}>
                 {todos.map((todo, index) => (
                   <TodoItem
-                    key={todo.id}
+                    key={todo.stableKey || todo.id}
                     todo={todo}
                     index={index}
                     onToggle={onToggleTodo}

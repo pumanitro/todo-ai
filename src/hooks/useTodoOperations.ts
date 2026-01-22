@@ -15,7 +15,7 @@ interface UseTodoOperationsProps {
   todos: Todo[];
   animateTaskTransition: (taskIds: string[]) => Promise<void>;
   showBlockedTasksMovedNotification: (tasksCount: number, parentTaskName: string) => void;
-  addNewTaskId: (taskId: string) => void;
+  addNewTaskId: (taskId: string, replaceId?: string) => void;
   addCompletingTaskId: (taskId: string) => void;
   addUncompletingTaskId: (taskId: string) => void;
 }
@@ -57,6 +57,7 @@ export const useTodoOperations = ({
         timestamp: Date.now(),
         order: minOrder - 1,
         category,
+        stableKey: tempId, // Stable key for React to prevent remount on ID change
         ...(dueDate && { dueDate }),
       };
       
@@ -70,9 +71,9 @@ export const useTodoOperations = ({
       return { previousTodos, tempId };
     },
     onSuccess: (newId, _, context) => {
-      // Replace temp id with real id in animation tracking
+      // Replace temp id with real id in animation tracking so animation continues smoothly
       if (context?.tempId) {
-        addNewTaskId(newId);
+        addNewTaskId(newId, context.tempId);
       }
     },
     onError: (_, __, context) => {

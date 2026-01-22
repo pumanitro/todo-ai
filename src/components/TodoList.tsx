@@ -127,7 +127,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
       const children = hierarchy ? hierarchy.children : undefined;
       
       return (
-        <React.Fragment key={todo.id}>
+        <React.Fragment key={todo.stableKey || todo.id}>
           {/* Parent Task */}
           <Box sx={{ mb: 0.5 }}>
             <TodoItem
@@ -138,7 +138,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isDraggable={false}
               hideDueDate={true}
               isAnimating={animatingTaskIds.has(todo.id)}
-              isNewTask={newTaskIds.has(todo.id)}
+              isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
               isUncompletingTask={uncompletingTaskIds.has(todo.id)}
             />
@@ -161,7 +161,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               />
               
               {children.map((child, childIndex) => (
-                <Box key={child.id} sx={{ mb: 0.5, position: 'relative' }}>
+                <Box key={child.stableKey || child.id} sx={{ mb: 0.5, position: 'relative' }}>
                   {/* Horizontal connector line */}
                   <Box 
                     sx={{ 
@@ -184,7 +184,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isDraggable={false}
                     hideDueDate={true}
                     isAnimating={animatingTaskIds.has(child.id)}
-                    isNewTask={newTaskIds.has(child.id)}
+                    isNewTask={newTaskIds.has(child.stableKey || child.id)}
                     isCompletingTask={completingTaskIds.has(child.id)}
                     isUncompletingTask={uncompletingTaskIds.has(child.id)}
                   />

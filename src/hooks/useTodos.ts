@@ -22,7 +22,7 @@ interface UseTodosReturn {
   newTaskIds: Set<string>;
   completingTaskIds: Set<string>;
   uncompletingTaskIds: Set<string>;
-  addNewTaskId: (taskId: string) => void;
+  addNewTaskId: (taskId: string, replaceId?: string) => void;
   addCompletingTaskId: (taskId: string) => void;
   addUncompletingTaskId: (taskId: string) => void;
   syncNow: () => Promise<void>;
@@ -36,14 +36,34 @@ export const useTodos = (user: User): UseTodosReturn => {
   const [newTaskIds, setNewTaskIds] = useState<Set<string>>(new Set());
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
   const [uncompletingTaskIds, setUncompletingTaskIds] = useState<Set<string>>(new Set());
+  // Show syncing indicator ONLY when transitioning from offline to online
+  const [showReconnectSync, setShowReconnectSync] = useState<boolean>(false);
+  const wasOfflineRef = useRef<boolean>(!navigator.onLine);
   
   // Ref to track current todos for visibility listener
   const todosRef = useRef<Todo[]>([]);
+  
+  // Track newId → stableKey mapping for optimistic updates
+  // This gets populated when a new task is created and Firebase returns the real ID
+  const stableKeyMapRef = useRef<Map<string, string>>(new Map());
 
-  // Track online/offline status
+  // Track online/offline status - show syncing only on offline->online transition
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Only show syncing indicator if we were previously offline
+      if (wasOfflineRef.current) {
+        setShowReconnectSync(true);
+        wasOfflineRef.current = false;
+        // Auto-hide after 3 seconds
+        setTimeout(() => setShowReconnectSync(false), 3000);
+      }
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      wasOfflineRef.current = true;
+      setShowReconnectSync(false);
+    };
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -66,11 +86,53 @@ export const useTodos = (user: User): UseTodosReturn => {
             const data = snapshot.val();
             const todoList = transformFirebaseDataToTodos(data);
             
-            // Update query cache with new data
-            queryClient.setQueryData(['todos', user.uid], todoList);
+      // Preserve stableKey from existing todos (for animation stability)
+      const existingTodos = queryClient.getQueryData<Todo[]>(['todos', user.uid]) || [];
+      
+      // Find temp todos that exist in cache (will be replaced by Firebase todo)
+      const tempTodosByKey = new Map<string, string>();
+      const existingIds = new Set<string>();
+      existingTodos.forEach(t => {
+        existingIds.add(t.id);
+        if (t.id.startsWith('temp_') && t.stableKey) {
+          const key = `${t.text}|${t.category || 'today'}`;
+          tempTodosByKey.set(key, t.stableKey);
+        }
+      });
+      
+      // Preserve stableKey from non-temp existing todos
+      const existingStableKeys = new Map<string, string>();
+      existingTodos.forEach(t => {
+        if (t.stableKey && !t.id.startsWith('temp_')) {
+          existingStableKeys.set(t.id, t.stableKey);
+        }
+      });
+      
+      // Find new todos (in Firebase but not in existing cache)
+      const newTodoIds = new Set<string>();
+      todoList.forEach(t => {
+        if (!existingIds.has(t.id) && !t.id.startsWith('temp_')) {
+          newTodoIds.add(t.id);
+        }
+      });
+      
+      const mergedTodoList = todoList.map(t => {
+        let stableKey = stableKeyMapRef.current.get(t.id);
+        if (!stableKey && newTodoIds.has(t.id)) {
+          const key = `${t.text}|${t.category || 'today'}`;
+          stableKey = tempTodosByKey.get(key);
+        }
+        if (!stableKey) {
+          stableKey = existingStableKeys.get(t.id) || t.stableKey;
+        }
+        return { ...t, stableKey };
+      });
+      
+      // Update query cache with new data
+      queryClient.setQueryData(['todos', user.uid], mergedTodoList);
             
             // Resolve on first load
-            resolve(todoList);
+            resolve(mergedTodoList);
           },
           (error) => {
             console.error('Firebase error:', error);
@@ -97,14 +159,59 @@ export const useTodos = (user: User): UseTodosReturn => {
       const data = snapshot.val();
       const todoList = transformFirebaseDataToTodos(data);
       
+      // Preserve stableKey from existing todos (for animation stability)
+      const existingTodos = queryClient.getQueryData<Todo[]>(['todos', user.uid]) || [];
+      
+      // Find temp todos that exist in cache (will be replaced by Firebase todo)
+      // Key: "text|category" → stableKey
+      const tempTodosByKey = new Map<string, string>();
+      const existingIds = new Set<string>();
+      existingTodos.forEach(t => {
+        existingIds.add(t.id);
+        if (t.id.startsWith('temp_') && t.stableKey) {
+          const key = `${t.text}|${t.category || 'today'}`;
+          tempTodosByKey.set(key, t.stableKey);
+        }
+      });
+      
+      // Also preserve stableKey from non-temp existing todos
+      const existingStableKeys = new Map<string, string>();
+      existingTodos.forEach(t => {
+        if (t.stableKey && !t.id.startsWith('temp_')) {
+          existingStableKeys.set(t.id, t.stableKey);
+        }
+      });
+      
+      // Find new todos (in Firebase but not in existing cache)
+      const newTodoIds = new Set<string>();
+      todoList.forEach(t => {
+        if (!existingIds.has(t.id) && !t.id.startsWith('temp_')) {
+          newTodoIds.add(t.id);
+        }
+      });
+      
+      const mergedTodoList = todoList.map(t => {
+        // Priority: 1) stableKeyMapRef, 2) match temp→new by text+category, 3) existing stableKey
+        let stableKey = stableKeyMapRef.current.get(t.id);
+        if (!stableKey && newTodoIds.has(t.id)) {
+          // This is a new Firebase todo - check if it matches a temp todo by text+category
+          const key = `${t.text}|${t.category || 'today'}`;
+          stableKey = tempTodosByKey.get(key);
+        }
+        if (!stableKey) {
+          stableKey = existingStableKeys.get(t.id) || t.stableKey;
+        }
+        return { ...t, stableKey };
+      });
+      
       // Update TanStack Query cache
-      queryClient.setQueryData(['todos', user.uid], todoList);
+      queryClient.setQueryData(['todos', user.uid], mergedTodoList);
       
       // Handle auto-migration of postponed tasks that are now due today
-      const tasksToMove = findTasksToMoveToToday(todoList);
+      const tasksToMove = findTasksToMoveToToday(mergedTodoList);
       
       if (tasksToMove.length > 0) {
-        await handleAutoMigration(tasksToMove, todoList);
+        await handleAutoMigration(tasksToMove, mergedTodoList);
       }
     };
 
@@ -141,9 +248,8 @@ export const useTodos = (user: User): UseTodosReturn => {
     todosRef.current = todos;
   }, [todos]);
 
-  // Check for pending mutations
-  const hasPendingSync = queryClient.isMutating() > 0 || 
-    queryClient.getMutationCache().getAll().some(m => m.state.isPaused);
+  // Syncing indicator only shows when coming back online (for 3 seconds)
+  const hasPendingSync = showReconnectSync;
 
   const handleAutoMigration = async (tasksToMove: Todo[], todoList: Todo[]) => {
     const todayTodos = todoList.filter(t => !t.completed && t.category === 'today');
@@ -215,15 +321,41 @@ export const useTodos = (user: User): UseTodosReturn => {
     }, 1000);
   };
 
-  const addNewTaskId = (taskId: string) => {
-    setNewTaskIds(prev => new Set(prev).add(taskId));
-    setTimeout(() => {
+  // Ref to track scheduled cleanup timeouts for new task animations
+  const newTaskCleanupRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  
+  const addNewTaskId = (taskId: string, replaceId?: string) => {
+    // If replacing tempId with realId, register the stableKey mapping
+    // The stableKey is the tempId itself (since optimistic todo has stableKey = tempId)
+    if (replaceId) {
+      stableKeyMapRef.current.set(taskId, replaceId);
+    }
+    
+    setNewTaskIds(prev => {
+      const newSet = new Set(prev);
+      // If replacing an ID (tempId -> realId), keep the tempId in the set
+      // since we now check by stableKey (which equals tempId)
+      // The cleanup timeout will handle removal after animation completes
+      if (replaceId) {
+        // Don't modify newSet - keep replaceId (the stableKey) in the set
+        // The existing timeout for replaceId will clean it up
+        return prev; // No change needed
+      }
+      newSet.add(taskId);
+      return newSet;
+    });
+    
+    // Schedule cleanup for this taskId
+    const timeout = setTimeout(() => {
       setNewTaskIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
         return newSet;
       });
-    }, 1000);
+      newTaskCleanupRef.current.delete(taskId);
+    }, replaceId ? 500 : 1000); // Shorter timeout for replacement since animation already started
+    
+    newTaskCleanupRef.current.set(taskId, timeout);
   };
 
   const addCompletingTaskId = (taskId: string) => {

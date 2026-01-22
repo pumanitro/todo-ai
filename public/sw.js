@@ -15,7 +15,7 @@
  */
 
 /** 👇  Bump this any time you change precache contents  */
-const CACHE_NAME = 'todo-flow-v68';
+const CACHE_NAME = 'todo-flow-v78';
 
 /**
  * In production your build pipeline should replace

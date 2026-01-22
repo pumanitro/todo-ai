@@ -75,7 +75,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           </Tooltip>
         )}
         
-        {/* Pending sync indicator */}
+        {/* Pending sync indicator - only shown when coming back online after being offline */}
         {isOnline && hasPendingSync && (
           <Tooltip title="Syncing pending changes...">
             <Chip

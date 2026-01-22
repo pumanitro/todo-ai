@@ -56,14 +56,14 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
         <Box sx={{ mt: 1, pl: 2, '& > *': { mb: 0.5 } }}>
           {completedTodos.map((todo, index) => (
             <TodoItem
-              key={todo.id}
+              key={todo.stableKey || todo.id}
               todo={todo}
               index={index}
               onToggle={onToggleTodo}
               onClick={onTodoClick}
               isDraggable={false}
               isAnimating={animatingTaskIds.has(todo.id)}
-              isNewTask={newTaskIds.has(todo.id)}
+              isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
               isUncompletingTask={uncompletingTaskIds.has(todo.id)}
             />
