@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, SwipeableDrawer, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth, Today, Schedule } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
@@ -199,12 +199,18 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     return filteredTasks.map((todo, index) => renderTaskWithChildren(todo, index));
   };
 
-  const handleDragStart = (result: any) => {
+  const handleDragStart = useCallback((result: any) => {
     const sourceCategory = result.source.droppableId as 'today' | 'backlog' | 'postponed';
     setDragFromCategory(sourceCategory);
-  };
+    // Lock body scroll on mobile to prevent page scrolling during drag
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+  }, []);
 
   const handleDragEndWrapper = async (result: DropResult) => {
+    // Unlock body scroll
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
     // Clear drag state
     setDragFromCategory(null);
     
