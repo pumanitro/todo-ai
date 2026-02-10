@@ -71,7 +71,8 @@ const TodoSection: React.FC<TodoSectionProps> = ({
               border: snapshot.isDraggingOver ? '2px dashed' : '2px solid transparent',
               borderColor: snapshot.isDraggingOver ? 'primary.main' : 'transparent',
               borderRadius: 1,
-              transition: 'all 0.2s ease',
+              // Only transition background, border, and padding - NOT transform (used by drag)
+              transition: 'background-color 0.2s ease, border-color 0.2s ease, padding 0.2s ease',
               p: snapshot.isDraggingOver ? 1 : 0,
             }}
           >

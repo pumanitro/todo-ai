@@ -322,7 +322,8 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
               border: (snapshot.isDraggingOver || shouldHighlightDrop) ? '2px dashed' : '2px solid transparent',
               borderColor: (snapshot.isDraggingOver || shouldHighlightDrop) ? 'primary.main' : 'transparent',
               borderRadius: 1,
-              transition: 'all 0.2s ease',
+              // Only transition background, border, and padding - NOT transform (used by drag)
+              transition: 'background-color 0.2s ease, border-color 0.2s ease, padding 0.2s ease',
               p: (snapshot.isDraggingOver || shouldHighlightDrop) ? 1 : 0,
             }}
           >

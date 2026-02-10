@@ -244,6 +244,12 @@
 - **postponedViewMode**: User preference for postponed section display ('list' | 'calendar')
 - **Hook**: `usePostponedViewMode` manages loading/saving view mode preference
 
+## Drag and Drop Performance
+- **Library**: `@hello-pangea/dnd` for drag-and-drop functionality
+- **CSS Transition Warning**: Never use `transition: 'all ...'` on droppable containers - it causes mobile touch drag lag
+- **Correct Pattern**: Use specific property transitions like `transition: 'background-color 0.2s ease, border-color 0.2s ease, padding 0.2s ease'`
+- **Reason**: `@hello-pangea/dnd` uses CSS `transform` for drag positioning; if `transform` is included in transitions, the drag lags behind the finger
+
 ## E2E Testing (Cypress)
 - **Framework**: Cypress for functional E2E click testing
 - **Test Credentials**: Stored in env vars `CYPRESS_TEST_EMAIL` and `CYPRESS_TEST_PASSWORD`
