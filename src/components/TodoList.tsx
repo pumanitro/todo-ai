@@ -241,7 +241,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Helper to apply eisenhower filter
   const applyEisenhowerFilter = (todoList: Todo[]) => {
     if (!eisenhowerFilter) return todoList;
-    return todoList.filter(todo => !todo.eisenhowerTag || todo.eisenhowerTag === eisenhowerFilter);
+    return todoList.filter(todo => todo.eisenhowerTag === eisenhowerFilter);
   };
 
   // Filter todos by category, then apply Eisenhower filter

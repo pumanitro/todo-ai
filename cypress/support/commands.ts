@@ -80,11 +80,14 @@ Cypress.Commands.add('login', () => {
       cy.get('input[type="email"]').clear().type(email);
       cy.get('input[type="password"]').clear().type(password);
       cy.contains('button', 'Sign in').click();
-      
+
       // Wait for successful login
       cy.contains('Today', { timeout: 20000 }).should('be.visible');
     }
   });
+
+  // Switch to "All" filter so all tasks are visible regardless of eisenhower tag
+  cy.contains('All').click({ force: true });
 });
 
 // Logout command
