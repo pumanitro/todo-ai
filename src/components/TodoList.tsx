@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, SwipeableDrawer, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper, Chip } from '@mui/material';
 import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth, Today, Schedule } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { User } from 'firebase/auth';
-import { Todo } from '../types/todo';
+import { Todo, EISENHOWER_OPTIONS } from '../types/todo';
 import UserHeader from './todo/UserHeader';
 import AddTodoForm from './todo/AddTodoForm';
 
 import NestedTodoSection from './todo/NestedTodoSection';
 import CompletedTodosSection from './todo/CompletedTodosSection';
-import TodoDetailsDrawer from './todo/TodoDetailsDrawer';
+import TaskFormDrawer from './todo/TaskFormDrawer';
 import TodoItem from './todo/TodoItem';
 import PostponedCalendarView from './todo/PostponedCalendarView';
 import PWAInstallPrompt from './PWAInstallPrompt';
@@ -19,6 +19,7 @@ import { useTodos } from '../hooks/useTodos';
 import { useTodoOperations } from '../hooks/useTodoOperations';
 import { useBadgeManager } from '../hooks/useBadgeManager';
 import { usePostponedViewMode, PostponedViewMode } from '../hooks/usePostponedViewMode';
+import { useEisenhowerFilter } from '../hooks/useEisenhowerFilter';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
 import { formatDateGroupTitle } from '../utils/dateUtils';
 import { extractHashtagsFromTexts } from '../utils/linkUtils';
@@ -34,7 +35,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState<boolean>(false);
   const [dragFromCategory, setDragFromCategory] = useState<'today' | 'backlog' | 'postponed' | null>(null);
   const [mobileTab, setMobileTab] = useState<'today' | 'postponed'>('today');
-  
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -74,6 +75,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Postponed view mode preference
   const { viewMode: postponedViewMode, setViewMode: setPostponedViewMode } = usePostponedViewMode(user);
 
+  // Eisenhower filter (persisted to Firebase)
+  const { eisenhowerFilter, setEisenhowerFilter } = useEisenhowerFilter(user);
+
   const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: PostponedViewMode | null) => {
     if (newMode !== null) {
       setPostponedViewMode(newMode);
@@ -92,7 +96,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     setSelectedTodo(null);
   };
 
-  const handleSaveEditWrapper = async (field: 'text' | 'description' | 'dueDate' | 'blockedBy', value: string) => {
+  const handleSaveEditWrapper = async (field: 'text' | 'description' | 'dueDate' | 'blockedBy' | 'eisenhowerTag', value: string) => {
     if (!selectedTodo) return;
     await handleSaveEdit(selectedTodo, field, value);
   };
@@ -140,6 +144,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
               isUncompletingTask={uncompletingTaskIds.has(todo.id)}
+              showEisenhowerTag={!eisenhowerFilter}
             />
           </Box>
           
@@ -186,6 +191,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isNewTask={newTaskIds.has(child.stableKey || child.id)}
                     isCompletingTask={completingTaskIds.has(child.id)}
                     isUncompletingTask={uncompletingTaskIds.has(child.id)}
+                    showEisenhowerTag={!eisenhowerFilter}
                   />
                 </Box>
               ))}
@@ -232,11 +238,17 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Extract all unique hashtags from all todos
   const allHashtags = extractHashtagsFromTexts(todos.map(t => t.text));
 
-  // Filter todos by category
-  const todayTodos = todos.filter(todo => !todo.completed && todo.category === 'today');
-  const postponedTodos = todos.filter(todo => !todo.completed && todo.category === 'postponed');
-  const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
-  const completedTodos = todos.filter(todo => todo.completed);
+  // Helper to apply eisenhower filter
+  const applyEisenhowerFilter = (todoList: Todo[]) => {
+    if (!eisenhowerFilter) return todoList;
+    return todoList.filter(todo => todo.eisenhowerTag === eisenhowerFilter);
+  };
+
+  // Filter todos by category, then apply Eisenhower filter
+  const todayTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'today'));
+  const postponedTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'postponed'));
+  const backlogTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'backlog'));
+  const completedTodos = applyEisenhowerFilter(todos.filter(todo => todo.completed));
 
   // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const postponedGroups = groupPostponedTodosByDate(postponedTodos, formatDateGroupTitle);
@@ -313,13 +325,48 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
 
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2.5, sm: 3, md: 4 }, pb: { xs: 10, sm: 2 } }}>
-      <UserHeader 
-        user={user} 
-        isConnected={isConnected} 
+      <UserHeader
+        user={user}
+        isConnected={isConnected}
         isOnline={isOnline}
         hasPendingSync={hasPendingSync}
         onSyncNow={syncNow}
       />
+
+      {/* Eisenhower Filter Chips */}
+      <Box sx={{ display: 'flex', gap: 0.75, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        {EISENHOWER_OPTIONS.map((option) => (
+          <Chip
+            key={option.value}
+            label={option.label}
+            size="small"
+            onClick={() => setEisenhowerFilter(eisenhowerFilter === option.value ? null : option.value)}
+            sx={{
+              fontWeight: eisenhowerFilter === option.value ? 600 : 400,
+              backgroundColor: eisenhowerFilter === option.value ? option.color : 'transparent',
+              color: eisenhowerFilter === option.value ? '#fff' : option.color,
+              border: '1px solid',
+              borderColor: option.color,
+              '&:hover': {
+                backgroundColor: eisenhowerFilter === option.value ? option.color : `${option.color}18`,
+              },
+            }}
+          />
+        ))}
+        <Chip
+          label="All"
+          size="small"
+          onClick={() => setEisenhowerFilter(null)}
+          sx={{
+            fontWeight: !eisenhowerFilter ? 600 : 400,
+            backgroundColor: !eisenhowerFilter ? 'text.primary' : 'transparent',
+            color: !eisenhowerFilter ? '#fff' : 'text.secondary',
+            border: '1px solid',
+            borderColor: !eisenhowerFilter ? 'text.primary' : 'divider',
+            '&:hover': { backgroundColor: !eisenhowerFilter ? 'text.primary' : 'action.hover' },
+          }}
+        />
+      </Box>
 
       {/* Mobile: Conditional rendering based on selected tab */}
       {isMobile ? (
@@ -340,6 +387,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     completingTaskIds={completingTaskIds}
                     uncompletingTaskIds={uncompletingTaskIds}
                     shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                    showEisenhowerTag={!eisenhowerFilter}
                   />
 
                   {/* Backlog Section */}
@@ -359,6 +407,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                       completingTaskIds={completingTaskIds}
                       uncompletingTaskIds={uncompletingTaskIds}
                       shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                      showEisenhowerTag={!eisenhowerFilter}
                     />
                   </Box>
                 </DragDropContext>
@@ -375,6 +424,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     newTaskIds={newTaskIds}
                     completingTaskIds={completingTaskIds}
                     uncompletingTaskIds={uncompletingTaskIds}
+                    showEisenhowerTag={!eisenhowerFilter}
                   />
                 </Box>
               )}
@@ -453,6 +503,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 uncompletingTaskIds={uncompletingTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
                 badgeCount={todayTodoCount}
+                showEisenhowerTag={!eisenhowerFilter}
               />
 
               {/* Backlog Section with Add Todo Form */}
@@ -474,6 +525,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                   completingTaskIds={completingTaskIds}
                   uncompletingTaskIds={uncompletingTaskIds}
                   shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+                  showEisenhowerTag={!eisenhowerFilter}
                 />
               </Box>
             </DragDropContext>
@@ -558,19 +610,28 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 newTaskIds={newTaskIds}
                 completingTaskIds={completingTaskIds}
                 uncompletingTaskIds={uncompletingTaskIds}
+                showEisenhowerTag={!eisenhowerFilter}
               />
             </Box>
           )}
         </>
       )}
 
-      <TodoDetailsDrawer
+      <TaskFormDrawer
         isOpen={isDrawerOpen}
+        mode="edit"
         todo={selectedTodo}
         todos={todos}
         onClose={handleCloseDrawer}
         onSaveEdit={handleSaveEditWrapper}
         onDelete={handleDeleteWrapper}
+      />
+
+      <TaskFormDrawer
+        isOpen={isAddDrawerOpen}
+        mode="add"
+        onClose={() => setIsAddDrawerOpen(false)}
+        onAddTodo={addTodo}
       />
 
       {/* Mobile FAB - positioned above bottom navigation */}
@@ -661,35 +722,6 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           </BottomNavigation>
         </Paper>
       )}
-
-      {/* Mobile Bottom Drawer for Add Task */}
-      <SwipeableDrawer
-        anchor="bottom"
-        open={isAddDrawerOpen}
-        onClose={() => setIsAddDrawerOpen(false)}
-        onOpen={() => setIsAddDrawerOpen(true)}
-        disableSwipeToOpen
-        sx={{
-          '& .MuiDrawer-paper': {
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            pb: 2,
-          },
-        }}
-      >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Typography variant="subtitle1" gutterBottom sx={{ mb: 2, fontSize: '1rem' }}>
-            Add New Backlog Task
-          </Typography>
-          <AddTodoForm 
-            onAddTodo={(text, dueDate) => {
-              addTodo(text, dueDate);
-              setIsAddDrawerOpen(false);
-            }}
-            allHashtags={allHashtags}
-          />
-        </Box>
-      </SwipeableDrawer>
 
       <Snackbar
         open={!!movedTasksNotification}

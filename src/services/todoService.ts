@@ -1,6 +1,6 @@
 import { database } from '../firebase/config';
 import { ref, push, onValue, remove, update } from 'firebase/database';
-import { Todo } from '../types/todo';
+import { Todo, EisenhowerTag } from '../types/todo';
 
 export class TodoService {
   static async addTodo(
@@ -8,7 +8,9 @@ export class TodoService {
     text: string,
     category: 'today' | 'backlog' | 'postponed',
     order: number,
-    dueDate?: string
+    dueDate?: string,
+    eisenhowerTag?: EisenhowerTag,
+    description?: string
   ): Promise<string> {
     const todosRef = ref(database, `users/${userId}/todos`);
     const newTodo = {
@@ -18,6 +20,8 @@ export class TodoService {
       order,
       category,
       ...(dueDate && { dueDate }),
+      ...(eisenhowerTag && { eisenhowerTag }),
+      ...(description && { description }),
     };
     
     const newTodoRef = await push(todosRef, newTodo);

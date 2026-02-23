@@ -1,16 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Typography, Box, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, List, ListItemButton, ListItemText } from '@mui/material';
 import { Add, Event } from '@mui/icons-material';
+import { EisenhowerTag } from '../../types/todo';
+import EisenhowerTagPicker from './EisenhowerTagPicker';
 
 interface AddTodoFormProps {
-  onAddTodo: (text: string, dueDate?: string) => void;
+  onAddTodo: (text: string, dueDate?: string, eisenhowerTag?: EisenhowerTag, description?: string) => void;
   allHashtags?: string[];
+  showAllFields?: boolean;
 }
 
-const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [] }) => {
+const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], showAllFields = false }) => {
   const [newTodo, setNewTodo] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [dueDate, setDueDate] = useState<string>('');
   const [showDateInput, setShowDateInput] = useState<boolean>(false);
+  const [eisenhowerTag, setEisenhowerTag] = useState<EisenhowerTag | null>(null);
   const [hashtagSuggestions, setHashtagSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
@@ -71,10 +76,12 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [] }
 
   const handleSubmit = () => {
     if (newTodo.trim()) {
-      onAddTodo(newTodo.trim(), dueDate || undefined);
+      onAddTodo(newTodo.trim(), dueDate || undefined, eisenhowerTag || undefined, description.trim() || undefined);
       setNewTodo('');
+      setDescription('');
       setDueDate('');
       setShowDateInput(false);
+      setEisenhowerTag(null);
     }
   };
 
@@ -300,6 +307,31 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [] }
           </Button>
         </Box>
       </Box>
+
+      {/* Extra fields - shown in expanded/mobile add mode */}
+      {showAllFields && (
+        <>
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            multiline
+            minRows={2}
+            maxRows={6}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Add a description for this task..."
+            size="small"
+            sx={{ mb: 2 }}
+          />
+          <Box sx={{ mb: 1 }}>
+            <EisenhowerTagPicker
+              value={eisenhowerTag}
+              onChange={setEisenhowerTag}
+            />
+          </Box>
+        </>
+      )}
     </>
   );
 };

@@ -16,6 +16,7 @@ interface NestedTodoSectionProps {
   completingTaskIds?: Set<string>;
   uncompletingTaskIds?: Set<string>;
   badgeCount?: number;
+  showEisenhowerTag?: boolean;
 }
 
 interface TodoHierarchy {
@@ -35,6 +36,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
   completingTaskIds = new Set(),
   uncompletingTaskIds = new Set(),
   badgeCount,
+  showEisenhowerTag = false,
 }) => {
   // Organize todos into hierarchical structure
   const organizeTodosHierarchy = (): { hierarchies: TodoHierarchy[]; standalone: Todo[] } => {
@@ -131,6 +133,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
           isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
           isCompletingTask={completingTaskIds.has(todo.id)}
           isUncompletingTask={uncompletingTaskIds.has(todo.id)}
+          showEisenhowerTag={showEisenhowerTag}
           blockedChildren={children || []}
         />
       </Box>
@@ -177,6 +180,7 @@ const NestedTodoSection: React.FC<NestedTodoSectionProps> = ({
                 isNewTask={newTaskIds.has(child.stableKey || child.id)}
                 isCompletingTask={completingTaskIds.has(child.id)}
                 isUncompletingTask={uncompletingTaskIds.has(child.id)}
+                showEisenhowerTag={showEisenhowerTag}
               />
             </Box>
           ))}

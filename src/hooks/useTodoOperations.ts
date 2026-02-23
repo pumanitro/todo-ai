@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { User } from 'firebase/auth';
-import { Todo } from '../types/todo';
+import { Todo, type EisenhowerTag } from '../types/todo';
 import { TodoService } from '../services/todoService';
 import { triggerTaskCompletionFeedback, triggerTaskUncompletionFeedback } from '../utils/feedbackUtils';
 import { 
@@ -34,12 +34,12 @@ export const useTodoOperations = ({
 
   // Add todo mutation with optimistic update
   const addMutation = useMutation({
-    mutationFn: async ({ text, dueDate }: { text: string; dueDate?: string }) => {
+    mutationFn: async ({ text, dueDate, eisenhowerTag, description }: { text: string; dueDate?: string; eisenhowerTag?: EisenhowerTag; description?: string }) => {
       const category = categorizeTodoByDueDate(dueDate);
       const minOrder = getMinOrderInCategory(todos, category);
-      return TodoService.addTodo(user.uid, text, category, minOrder - 1, dueDate);
+      return TodoService.addTodo(user.uid, text, category, minOrder - 1, dueDate, eisenhowerTag, description);
     },
-    onMutate: async ({ text, dueDate }) => {
+    onMutate: async ({ text, dueDate, eisenhowerTag, description }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey });
       
@@ -59,6 +59,8 @@ export const useTodoOperations = ({
         category,
         stableKey: tempId, // Stable key for React to prevent remount on ID change
         ...(dueDate && { dueDate }),
+        ...(eisenhowerTag && { eisenhowerTag }),
+        ...(description && { description }),
       };
       
       queryClient.setQueryData<Todo[]>(queryKey, (old) => 
@@ -241,8 +243,8 @@ export const useTodoOperations = ({
     networkMode: 'offlineFirst',
   });
 
-  const addTodo = async (text: string, dueDate?: string) => {
-    addMutation.mutate({ text, dueDate });
+  const addTodo = async (text: string, dueDate?: string, eisenhowerTag?: EisenhowerTag, description?: string) => {
+    addMutation.mutate({ text, dueDate, eisenhowerTag, description });
   };
 
   const deleteTodo = async (todoId: string) => {
@@ -252,7 +254,7 @@ export const useTodoOperations = ({
 
   const handleSaveEdit = async (
     selectedTodo: Todo,
-    field: 'text' | 'description' | 'dueDate' | 'blockedBy',
+    field: 'text' | 'description' | 'dueDate' | 'blockedBy' | 'eisenhowerTag',
     value: string
   ) => {
     let updates: any = {
@@ -270,6 +272,10 @@ export const useTodoOperations = ({
       if (!value.trim()) {
         updates.dueDate = null;
       }
+    }
+
+    if (field === 'eisenhowerTag') {
+      updates.eisenhowerTag = value.trim() || null;
     }
 
     if (field === 'blockedBy') {

@@ -2,7 +2,7 @@ import React from 'react';
 import { ListItem, Checkbox, Box, Typography, Chip } from '@mui/material';
 import { CheckCircle, RadioButtonUnchecked, DragIndicator, Description, Event } from '@mui/icons-material';
 import { Draggable } from '@hello-pangea/dnd';
-import { Todo } from '../../types/todo';
+import { Todo, EISENHOWER_OPTIONS } from '../../types/todo';
 import { renderTextWithLinks } from '../../utils/linkUtils';
 
 interface TodoItemProps {
@@ -17,9 +17,10 @@ interface TodoItemProps {
   isNewTask?: boolean;
   isCompletingTask?: boolean;
   isUncompletingTask?: boolean;
+  showEisenhowerTag?: boolean;
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false, isAnimating = false, blockedChildren = [], isNewTask = false, isCompletingTask = false, isUncompletingTask = false }) => {
+const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isDraggable = true, hideDueDate = false, isAnimating = false, blockedChildren = [], isNewTask = false, isCompletingTask = false, isUncompletingTask = false, showEisenhowerTag = false }) => {
   const getDueDateDisplay = (dueDate: string) => {
     const today = new Date().toISOString().split('T')[0];
     const due = new Date(dueDate);
@@ -123,19 +124,40 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, index, onToggle, onClick, isD
           >
             {renderTextWithLinks(todo.text)}
           </Typography>
-          {todo.dueDate && !hideDueDate && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-              <Event fontSize="small" sx={{ color: 'text.disabled', fontSize: '14px' }} />
-              <Chip
-                label={getDueDateDisplay(todo.dueDate).label}
-                color={getDueDateDisplay(todo.dueDate).color}
-                size="small"
-                variant="outlined"
-                sx={{ 
-                  height: '20px', 
-                  fontSize: '0.7rem',
-                }}
-              />
+          {(todo.dueDate && !hideDueDate || (showEisenhowerTag && todo.eisenhowerTag)) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+              {todo.dueDate && !hideDueDate && (
+                <>
+                  <Event fontSize="small" sx={{ color: 'text.disabled', fontSize: '14px' }} />
+                  <Chip
+                    label={getDueDateDisplay(todo.dueDate).label}
+                    color={getDueDateDisplay(todo.dueDate).color}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      height: '20px',
+                      fontSize: '0.7rem',
+                    }}
+                  />
+                </>
+              )}
+              {showEisenhowerTag && todo.eisenhowerTag && (() => {
+                const option = EISENHOWER_OPTIONS.find(o => o.value === todo.eisenhowerTag);
+                if (!option) return null;
+                return (
+                  <Chip
+                    label={option.label}
+                    size="small"
+                    sx={{
+                      height: '20px',
+                      fontSize: '0.65rem',
+                      fontWeight: 600,
+                      backgroundColor: option.color,
+                      color: '#fff',
+                    }}
+                  />
+                );
+              })()}
             </Box>
           )}
         </Box>

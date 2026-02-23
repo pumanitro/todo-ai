@@ -28,6 +28,7 @@ export const transformFirebaseDataToTodos = (data: any): Todo[] => {
     category: value.category || 'today',
     dueDate: value.dueDate || undefined,
     blockedBy: value.blockedBy || undefined,
+    eisenhowerTag: value.eisenhowerTag || undefined,
   }));
   
   // Sort by order (primary) and timestamp (secondary)

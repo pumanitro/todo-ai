@@ -12,16 +12,18 @@ interface CompletedTodosSectionProps {
   newTaskIds?: Set<string>;
   completingTaskIds?: Set<string>;
   uncompletingTaskIds?: Set<string>;
+  showEisenhowerTag?: boolean;
 }
 
-const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({ 
-  completedTodos, 
-  onToggleTodo, 
+const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
+  completedTodos,
+  onToggleTodo,
   onTodoClick,
   animatingTaskIds = new Set(),
   newTaskIds = new Set(),
   completingTaskIds = new Set(),
   uncompletingTaskIds = new Set(),
+  showEisenhowerTag = false,
 }) => {
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
 
@@ -66,6 +68,7 @@ const CompletedTodosSection: React.FC<CompletedTodosSectionProps> = ({
               isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
               isUncompletingTask={uncompletingTaskIds.has(todo.id)}
+              showEisenhowerTag={showEisenhowerTag}
             />
           ))}
         </Box>
