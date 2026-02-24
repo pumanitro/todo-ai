@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Typography, Box, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, List, ListItemButton, ListItemText } from '@mui/material';
+import { Typography, Box, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, List, ListItemButton, ListItemText, Chip } from '@mui/material';
 import { Add, Event } from '@mui/icons-material';
-import { EisenhowerTag } from '../../types/todo';
+import { EisenhowerTag, EISENHOWER_OPTIONS } from '../../types/todo';
 import EisenhowerTagPicker from './EisenhowerTagPicker';
 
 interface AddTodoFormProps {
@@ -158,7 +158,7 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
         mb: 2 
       }}>
         {/* Text Input - Full width on mobile, takes remaining space on desktop */}
-        <Box sx={{ position: 'relative', width: { xs: '100%', sm: 'auto' }, flex: { sm: 1 } }}>
+        <Box sx={{ position: 'relative', width: { xs: '100%', sm: 'auto' }, flex: { sm: 1 }, display: 'flex', alignItems: 'center' }}>
           <TextField
             inputRef={inputRef}
             fullWidth
@@ -221,12 +221,77 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
         </Box>
         
         {/* Buttons Container - Separate row on mobile */}
-        <Box sx={{ 
-          display: 'flex', 
-          gap: 1.5,
+        <Box sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
           justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-          width: { xs: '100%', sm: 'auto' }
+          width: { xs: '100%', sm: 'auto' },
         }}>
+          {/* Compact 2x2 Eisenhower Matrix (desktop only) - headers appear on hover */}
+          {!isMobile && (
+            <Box sx={{
+              position: 'relative',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '3px',
+              '& .matrix-header': {
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: 'none',
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                px: '3px',
+                borderRadius: '2px',
+              },
+              '&:hover .matrix-header': {
+                opacity: 1,
+              },
+            }}>
+              {/* Column headers - absolutely positioned above */}
+              <Typography className="matrix-header" variant="caption" sx={{ position: 'absolute', top: -14, left: 0, right: '50%', textAlign: 'center', fontSize: '0.6rem', color: 'text.secondary', fontWeight: 600 }}>
+                Urgent
+              </Typography>
+              <Typography className="matrix-header" variant="caption" sx={{ position: 'absolute', top: -14, left: '50%', right: 0, textAlign: 'center', fontSize: '0.6rem', color: 'text.secondary', fontWeight: 600 }}>
+                Not Urgent
+              </Typography>
+              {/* Row headers - absolutely positioned to the left */}
+              <Typography className="matrix-header" variant="caption" sx={{ position: 'absolute', top: 0, bottom: '50%', right: '100%', pr: 0.5, fontSize: '0.6rem', color: 'text.secondary', fontWeight: 600, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                Important
+              </Typography>
+              <Typography className="matrix-header" variant="caption" sx={{ position: 'absolute', top: '50%', bottom: 0, right: '100%', pr: 0.5, fontSize: '0.6rem', color: 'text.secondary', fontWeight: 600, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                Not Imp.
+              </Typography>
+              {(['do', 'schedule', 'delegate', 'delete'] as EisenhowerTag[]).map((tag) => {
+                const option = EISENHOWER_OPTIONS.find(o => o.value === tag)!;
+                const isSelected = eisenhowerTag === tag;
+                return (
+                  <Chip
+                    key={tag}
+                    label={option.label}
+                    size="small"
+                    onClick={() => setEisenhowerTag(isSelected ? null : tag)}
+                    sx={{
+                      height: 24,
+                      fontSize: '0.68rem',
+                      fontWeight: isSelected ? 600 : 500,
+                      backgroundColor: isSelected ? option.color : 'transparent',
+                      color: isSelected ? '#fff' : option.color,
+                      border: '1.5px solid',
+                      borderColor: isSelected ? option.color : `${option.color}50`,
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      '& .MuiChip-label': { px: 1 },
+                      '&:hover': {
+                        backgroundColor: isSelected ? option.color : `${option.color}14`,
+                        borderColor: option.color,
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          )}
+
           {/* Date Input or Icon Button */}
           {shouldShowDateInput ? (
             <TextField
@@ -244,7 +309,7 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
               onBlur={handleDateInputBlur}
               size="small"
               label={isMobile ? "Due Date" : undefined}
-              sx={{ 
+              sx={{
                 width: { xs: 'auto', sm: 220 },
                 '& .MuiInputBase-input': {
                   cursor: 'pointer'
@@ -258,7 +323,7 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
             <IconButton
               onClick={handleDateIconClick}
               size="small"
-              sx={{ 
+              sx={{
                 border: '1px solid',
                 borderColor: dueDate ? 'primary.main' : 'divider',
                 borderRadius: 1,
@@ -274,9 +339,9 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
             >
               <Event fontSize="small" />
               {dueDate && (
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
+                <Typography
+                  variant="caption"
+                  sx={{
                     position: 'absolute',
                     bottom: -2,
                     fontSize: '8px',
@@ -296,8 +361,8 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAddTodo, allHashtags = [], 
             onClick={handleSubmit}
             disabled={!newTodo.trim()}
             startIcon={<Add />}
-            sx={{ 
-              minWidth: { xs: 'auto', sm: 100 }, 
+            sx={{
+              minWidth: { xs: 'auto', sm: 100 },
               whiteSpace: 'nowrap',
               flex: { xs: 1, sm: 'none' }
             }}
