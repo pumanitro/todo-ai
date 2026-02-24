@@ -86,8 +86,6 @@ Cypress.Commands.add('login', () => {
     }
   });
 
-  // Switch to "All" filter so all tasks are visible regardless of eisenhower tag
-  cy.contains('All').click({ force: true });
 });
 
 // Logout command
