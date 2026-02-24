@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper, Chip } from '@mui/material';
+import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth, Today, Schedule } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { User } from 'firebase/auth';
-import { Todo, EISENHOWER_OPTIONS } from '../types/todo';
+import { Todo } from '../types/todo';
 import UserHeader from './todo/UserHeader';
 import AddTodoForm from './todo/AddTodoForm';
 
@@ -19,7 +19,8 @@ import { useTodos } from '../hooks/useTodos';
 import { useTodoOperations } from '../hooks/useTodoOperations';
 import { useBadgeManager } from '../hooks/useBadgeManager';
 import { usePostponedViewMode, PostponedViewMode } from '../hooks/usePostponedViewMode';
-import { useEisenhowerFilter } from '../hooks/useEisenhowerFilter';
+import { ref, remove } from 'firebase/database';
+import { database } from '../firebase/config';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
 import { formatDateGroupTitle } from '../utils/dateUtils';
 import { extractHashtagsFromTexts } from '../utils/linkUtils';
@@ -75,8 +76,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Postponed view mode preference
   const { viewMode: postponedViewMode, setViewMode: setPostponedViewMode } = usePostponedViewMode(user);
 
-  // Eisenhower filter (persisted to Firebase)
-  const { eisenhowerFilter, setEisenhowerFilter } = useEisenhowerFilter(user);
+  // Clean up old eisenhower filter setting from Firebase
+  React.useEffect(() => {
+    if (user?.uid) {
+      const filterRef = ref(database, `users/${user.uid}/settings/eisenhowerFilter`);
+      remove(filterRef).catch(() => {});
+    }
+  }, [user?.uid]);
 
   const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: PostponedViewMode | null) => {
     if (newMode !== null) {
@@ -144,7 +150,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               isNewTask={newTaskIds.has(todo.stableKey || todo.id)}
               isCompletingTask={completingTaskIds.has(todo.id)}
               isUncompletingTask={uncompletingTaskIds.has(todo.id)}
-              showEisenhowerTag={!eisenhowerFilter}
+              showEisenhowerTag={true}
             />
           </Box>
           
@@ -191,7 +197,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     isNewTask={newTaskIds.has(child.stableKey || child.id)}
                     isCompletingTask={completingTaskIds.has(child.id)}
                     isUncompletingTask={uncompletingTaskIds.has(child.id)}
-                    showEisenhowerTag={!eisenhowerFilter}
+                    showEisenhowerTag={true}
                   />
                 </Box>
               ))}
@@ -238,17 +244,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Extract all unique hashtags from all todos
   const allHashtags = extractHashtagsFromTexts(todos.map(t => t.text));
 
-  // Helper to apply eisenhower filter
-  const applyEisenhowerFilter = (todoList: Todo[]) => {
-    if (!eisenhowerFilter) return todoList;
-    return todoList.filter(todo => todo.eisenhowerTag === eisenhowerFilter);
-  };
-
-  // Filter todos by category, then apply Eisenhower filter
-  const todayTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'today'));
-  const postponedTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'postponed'));
-  const backlogTodos = applyEisenhowerFilter(todos.filter(todo => !todo.completed && todo.category === 'backlog'));
-  const completedTodos = applyEisenhowerFilter(todos.filter(todo => todo.completed));
+  // Filter todos by category
+  const todayTodos = todos.filter(todo => !todo.completed && todo.category === 'today');
+  const postponedTodos = todos.filter(todo => !todo.completed && todo.category === 'postponed');
+  const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
+  const completedTodos = todos.filter(todo => todo.completed);
 
   // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const postponedGroups = groupPostponedTodosByDate(postponedTodos, formatDateGroupTitle);
@@ -333,41 +333,6 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
         onSyncNow={syncNow}
       />
 
-      {/* Eisenhower Filter Chips */}
-      <Box sx={{ display: 'flex', gap: 0.75, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        {EISENHOWER_OPTIONS.map((option) => (
-          <Chip
-            key={option.value}
-            label={option.label}
-            size="small"
-            onClick={() => setEisenhowerFilter(eisenhowerFilter === option.value ? null : option.value)}
-            sx={{
-              fontWeight: eisenhowerFilter === option.value ? 600 : 400,
-              backgroundColor: eisenhowerFilter === option.value ? option.color : 'transparent',
-              color: eisenhowerFilter === option.value ? '#fff' : option.color,
-              border: '1px solid',
-              borderColor: option.color,
-              '&:hover': {
-                backgroundColor: eisenhowerFilter === option.value ? option.color : `${option.color}18`,
-              },
-            }}
-          />
-        ))}
-        <Chip
-          label="All"
-          size="small"
-          onClick={() => setEisenhowerFilter(null)}
-          sx={{
-            fontWeight: !eisenhowerFilter ? 600 : 400,
-            backgroundColor: !eisenhowerFilter ? 'text.primary' : 'transparent',
-            color: !eisenhowerFilter ? '#fff' : 'text.secondary',
-            border: '1px solid',
-            borderColor: !eisenhowerFilter ? 'text.primary' : 'divider',
-            '&:hover': { backgroundColor: !eisenhowerFilter ? 'text.primary' : 'action.hover' },
-          }}
-        />
-      </Box>
-
       {/* Mobile: Conditional rendering based on selected tab */}
       {isMobile ? (
         <>
@@ -387,7 +352,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     completingTaskIds={completingTaskIds}
                     uncompletingTaskIds={uncompletingTaskIds}
                     shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-                    showEisenhowerTag={!eisenhowerFilter}
+                    showEisenhowerTag={true}
                   />
 
                   {/* Backlog Section */}
@@ -407,7 +372,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                       completingTaskIds={completingTaskIds}
                       uncompletingTaskIds={uncompletingTaskIds}
                       shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-                      showEisenhowerTag={!eisenhowerFilter}
+                      showEisenhowerTag={true}
                     />
                   </Box>
                 </DragDropContext>
@@ -424,7 +389,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                     newTaskIds={newTaskIds}
                     completingTaskIds={completingTaskIds}
                     uncompletingTaskIds={uncompletingTaskIds}
-                    showEisenhowerTag={!eisenhowerFilter}
+                    showEisenhowerTag={true}
                   />
                 </Box>
               )}
@@ -503,7 +468,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 uncompletingTaskIds={uncompletingTaskIds}
                 shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
                 badgeCount={todayTodoCount}
-                showEisenhowerTag={!eisenhowerFilter}
+                showEisenhowerTag={true}
               />
 
               {/* Backlog Section with Add Todo Form */}
@@ -525,7 +490,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                   completingTaskIds={completingTaskIds}
                   uncompletingTaskIds={uncompletingTaskIds}
                   shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-                  showEisenhowerTag={!eisenhowerFilter}
+                  showEisenhowerTag={true}
                 />
               </Box>
             </DragDropContext>
@@ -610,7 +575,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 newTaskIds={newTaskIds}
                 completingTaskIds={completingTaskIds}
                 uncompletingTaskIds={uncompletingTaskIds}
-                showEisenhowerTag={!eisenhowerFilter}
+                showEisenhowerTag={true}
               />
             </Box>
           )}
