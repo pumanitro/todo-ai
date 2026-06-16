@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Container, Collapse, IconButton, Box, Typography, Alert, Snackbar, Fab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { Container, Collapse, IconButton, Box, Typography, Badge, Alert, Snackbar, Fab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton, Tooltip, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import { ExpandMore, ExpandLess, Add, ViewList, CalendarMonth, Today, Schedule } from '@mui/icons-material';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { User } from 'firebase/auth';
@@ -18,7 +18,7 @@ import PWAInstallPrompt from './PWAInstallPrompt';
 import { useTodos } from '../hooks/useTodos';
 import { useTodoOperations } from '../hooks/useTodoOperations';
 import { useBadgeManager } from '../hooks/useBadgeManager';
-import { usePostponedViewMode, PostponedViewMode } from '../hooks/usePostponedViewMode';
+import { useViewModeSetting, ViewMode } from '../hooks/useViewModeSetting';
 import { ref, remove } from 'firebase/database';
 import { database } from '../firebase/config';
 import { organizeTaskHierarchy, groupPostponedTodosByDate } from '../utils/todoUtils';
@@ -73,8 +73,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Badge management for PWA icon and browser tab
   const { todayTodoCount, badgeSupported, isAndroidDevice } = useBadgeManager({ todos, isConnected });
 
-  // Postponed view mode preference
-  const { viewMode: postponedViewMode, setViewMode: setPostponedViewMode } = usePostponedViewMode(user);
+  // Today view mode preference (list of tasks vs. calendar of items to deliver)
+  const { viewMode: todayViewMode, setViewMode: setTodayViewMode } = useViewModeSetting(user, 'todayViewMode');
 
   // Clean up old eisenhower filter setting from Firebase
   React.useEffect(() => {
@@ -84,9 +84,9 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     }
   }, [user?.uid]);
 
-  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: PostponedViewMode | null) => {
+  const handleTodayViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
     if (newMode !== null) {
-      setPostponedViewMode(newMode);
+      setTodayViewMode(newMode);
     }
   };
 
@@ -250,6 +250,10 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const backlogTodos = todos.filter(todo => !todo.completed && todo.category === 'backlog');
   const completedTodos = todos.filter(todo => todo.completed);
 
+  // Items that need to be delivered: all incomplete, due-dated, non-blocked tasks
+  // (today/overdue + postponed). Shown in the Today section's calendar view.
+  const deliveryTodos = todos.filter(todo => !todo.completed && !!todo.dueDate && !todo.blockedBy);
+
   // Group postponed todos by date (only parent tasks, nesting will be handled in rendering)
   const postponedGroups = groupPostponedTodosByDate(postponedTodos, formatDateGroupTitle);
 
@@ -323,6 +327,78 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     </Box>
   );
 
+  // Today section view toggle (list of today's tasks vs. calendar of deliverables)
+  const todayViewToggle = (
+    <ToggleButtonGroup
+      value={todayViewMode}
+      exclusive
+      onChange={handleTodayViewModeChange}
+      size="small"
+    >
+      <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
+        <Tooltip title="List View">
+          <ViewList fontSize="small" />
+        </Tooltip>
+      </ToggleButton>
+      <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
+        <Tooltip title="Calendar View">
+          <CalendarMonth fontSize="small" />
+        </Tooltip>
+      </ToggleButton>
+    </ToggleButtonGroup>
+  );
+
+  // Today section: header with the list/calendar toggle, then either the list of
+  // today's tasks (drag & drop) or a calendar of items to be delivered.
+  // Must be rendered inside a DragDropContext (the list view is a Droppable).
+  const renderTodaySection = (showBadge: boolean) => (
+    <>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="overline" sx={{ fontWeight: 600 }}>
+            Today
+          </Typography>
+          {showBadge && todayTodoCount > 0 && (
+            <Badge
+              badgeContent={todayTodoCount}
+              color="error"
+              sx={{
+                ml: 1.5,
+                '& .MuiBadge-badge': {
+                  fontSize: '0.6rem',
+                  height: '16px',
+                  minWidth: '16px',
+                },
+              }}
+            />
+          )}
+        </Box>
+        {todayViewToggle}
+      </Box>
+
+      {todayViewMode === 'list' ? (
+        <NestedTodoSection
+          category="today"
+          todos={todayTodos}
+          title=""
+          onToggleTodo={toggleTodo}
+          onTodoClick={handleTodoClick}
+          animatingTaskIds={animatingTaskIds}
+          newTaskIds={newTaskIds}
+          completingTaskIds={completingTaskIds}
+          uncompletingTaskIds={uncompletingTaskIds}
+          shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
+          showEisenhowerTag={true}
+        />
+      ) : (
+        <PostponedCalendarView
+          todos={deliveryTodos}
+          onTodoClick={handleTodoClick}
+        />
+      )}
+    </>
+  );
+
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2.5, sm: 3, md: 4 }, pb: { xs: 10, sm: 2 } }}>
       <UserHeader
@@ -341,19 +417,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               {/* Today + Backlog - Main active tasks */}
               <Box sx={{ mb: 3 }}>
                 <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
-                  <NestedTodoSection
-                    category="today"
-                    todos={todayTodos}
-                    title="Today"
-                    onToggleTodo={toggleTodo}
-                    onTodoClick={handleTodoClick}
-                    animatingTaskIds={animatingTaskIds}
-                    newTaskIds={newTaskIds}
-                    completingTaskIds={completingTaskIds}
-                    uncompletingTaskIds={uncompletingTaskIds}
-                    shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-                    showEisenhowerTag={true}
-                  />
+                  {renderTodaySection(false)}
 
                   {/* Backlog Section */}
                   <Box sx={{ mb: 0, mt: 2 }}>
@@ -395,13 +459,12 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               )}
             </>
           ) : (
-            /* Mobile Postponed Tab */
+            /* Mobile Postponed Tab - list view only */
             <Box sx={{ mb: 3 }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
                   py: 0.5,
                   mb: 1,
                 }}
@@ -409,37 +472,15 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 <Typography variant="overline" sx={{ fontWeight: 600 }}>
                   Postponed ({postponedTodos.length})
                 </Typography>
-                
-                {/* View Mode Toggle */}
-                <ToggleButtonGroup
-                  value={postponedViewMode}
-                  exclusive
-                  onChange={handleViewModeChange}
-                  size="small"
-                >
-                  <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
-                    <ViewList fontSize="small" />
-                  </ToggleButton>
-                  <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
-                    <CalendarMonth fontSize="small" />
-                  </ToggleButton>
-                </ToggleButtonGroup>
               </Box>
-              
+
               {postponedTodos.length > 0 ? (
-                postponedViewMode === 'list' ? (
-                  renderPostponedListContent()
-                ) : (
-                  <PostponedCalendarView
-                    todos={postponedTodos}
-                    onTodoClick={handleTodoClick}
-                  />
-                )
+                renderPostponedListContent()
               ) : (
-                <Box sx={{ 
-                  textAlign: 'center', 
-                  py: 4, 
-                  color: 'text.secondary' 
+                <Box sx={{
+                  textAlign: 'center',
+                  py: 4,
+                  color: 'text.secondary'
                 }}>
                   <Schedule sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
                   <Typography variant="body2">
@@ -456,20 +497,7 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
           {/* Today + Backlog - Main active tasks */}
           <Box sx={{ mb: 3 }}>
             <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
-              <NestedTodoSection
-                category="today"
-                todos={todayTodos}
-                title="Today"
-                onToggleTodo={toggleTodo}
-                onTodoClick={handleTodoClick}
-                animatingTaskIds={animatingTaskIds}
-                newTaskIds={newTaskIds}
-                completingTaskIds={completingTaskIds}
-                uncompletingTaskIds={uncompletingTaskIds}
-                shouldHighlightDrop={dragFromCategory === 'today' || dragFromCategory === 'backlog'}
-                badgeCount={todayTodoCount}
-                showEisenhowerTag={true}
-              />
+              {renderTodaySection(true)}
 
               {/* Backlog Section with Add Todo Form */}
               <Box sx={{ mb: 0, mt: 2 }}>
@@ -496,70 +524,34 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             </DragDropContext>
           </Box>
 
-          {/* Postponed Tasks - Separate section */}
+          {/* Postponed Tasks - Separate section, list view only */}
           {postponedTodos.length > 0 && (
             <Box sx={{ mb: 3 }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
                   py: 0.5,
                   borderRadius: 1,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
                 }}
+                onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
               >
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    cursor: 'pointer',
-                    flexGrow: 1,
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                    borderRadius: 1,
-                  }}
-                  onClick={() => setIsPostponedExpanded(!isPostponedExpanded)}
-                >
-                  <IconButton size="small">
-                    {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
-                  </IconButton>
-                  <Typography variant="overline" sx={{ mb: 0, fontWeight: 600 }}>
-                    Postponed ({postponedTodos.length})
-                  </Typography>
-                </Box>
-                
-                {/* View Mode Toggle */}
-                <ToggleButtonGroup
-                  value={postponedViewMode}
-                  exclusive
-                  onChange={handleViewModeChange}
-                  size="small"
-                  sx={{ ml: 1 }}
-                >
-                  <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
-                    <Tooltip title="List View">
-                      <ViewList fontSize="small" />
-                    </Tooltip>
-                  </ToggleButton>
-                  <ToggleButton value="calendar" aria-label="calendar view" sx={{ p: 0.5 }}>
-                    <Tooltip title="Calendar View">
-                      <CalendarMonth fontSize="small" />
-                    </Tooltip>
-                  </ToggleButton>
-                </ToggleButtonGroup>
+                <IconButton size="small">
+                  {isPostponedExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+                <Typography variant="overline" sx={{ mb: 0, fontWeight: 600 }}>
+                  Postponed ({postponedTodos.length})
+                </Typography>
               </Box>
-              
+
               <Collapse in={isPostponedExpanded}>
-                {postponedViewMode === 'list' ? (
-                  <Box sx={{ pl: 2 }}>
-                    {renderPostponedListContent()}
-                  </Box>
-                ) : (
-                  <PostponedCalendarView
-                    todos={postponedTodos}
-                    onTodoClick={handleTodoClick}
-                  />
-                )}
+                <Box sx={{ pl: 2 }}>
+                  {renderPostponedListContent()}
+                </Box>
               </Collapse>
             </Box>
           )}
