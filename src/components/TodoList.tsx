@@ -373,10 +373,11 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             />
           )}
         </Box>
-        {todayViewToggle}
+        {/* Toggle is desktop-only; mobile navigates via the bottom tabs */}
+        {!isMobile && todayViewToggle}
       </Box>
 
-      {todayViewMode === 'list' ? (
+      {isMobile || todayViewMode === 'list' ? (
         <NestedTodoSection
           category="today"
           todos={todayTodos}
