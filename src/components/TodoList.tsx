@@ -76,6 +76,15 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   // Today view mode preference (list of tasks vs. calendar of items to deliver)
   const { viewMode: todayViewMode, setViewMode: setTodayViewMode } = useViewModeSetting(user, 'todayViewMode');
 
+  // Mobile Postponed tab view mode (calendar of deliverables by default vs. the
+  // postponed list). Distinct key so it defaults to calendar regardless of any
+  // legacy `postponedViewMode` value.
+  const { viewMode: postponedViewMode, setViewMode: setPostponedViewMode } = useViewModeSetting(
+    user,
+    'postponedMobileViewMode',
+    'calendar'
+  );
+
   // Clean up old eisenhower filter setting from Firebase
   React.useEffect(() => {
     if (user?.uid) {
@@ -87,6 +96,12 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
   const handleTodayViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
     if (newMode !== null) {
       setTodayViewMode(newMode);
+    }
+  };
+
+  const handlePostponedViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+    if (newMode !== null) {
+      setPostponedViewMode(newMode);
     }
   };
 
@@ -327,14 +342,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
     </Box>
   );
 
-  // Today section view toggle (list of today's tasks vs. calendar of deliverables)
-  const todayViewToggle = (
-    <ToggleButtonGroup
-      value={todayViewMode}
-      exclusive
-      onChange={handleTodayViewModeChange}
-      size="small"
-    >
+  // List/calendar view toggle, shared by the Today section (desktop) and the
+  // mobile Postponed tab.
+  const renderViewToggle = (
+    value: ViewMode,
+    onChange: (event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => void
+  ) => (
+    <ToggleButtonGroup value={value} exclusive onChange={onChange} size="small">
       <ToggleButton value="list" aria-label="list view" sx={{ p: 0.5 }}>
         <Tooltip title="List View">
           <ViewList fontSize="small" />
@@ -373,8 +387,8 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
             />
           )}
         </Box>
-        {/* Toggle is desktop-only; mobile navigates via the bottom tabs */}
-        {!isMobile && todayViewToggle}
+        {/* Toggle is desktop-only; on mobile the calendar lives in the Postponed tab */}
+        {!isMobile && renderViewToggle(todayViewMode, handleTodayViewModeChange)}
       </Box>
 
       {isMobile || todayViewMode === 'list' ? (
@@ -460,12 +474,13 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
               )}
             </>
           ) : (
-            /* Mobile Postponed Tab - list view only */
+            /* Mobile Postponed Tab - calendar of deliverables (default) or list */
             <Box sx={{ mb: 3 }}>
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   py: 0.5,
                   mb: 1,
                 }}
@@ -473,9 +488,15 @@ const TodoList: React.FC<TodoListProps> = ({ user }) => {
                 <Typography variant="overline" sx={{ fontWeight: 600 }}>
                   Postponed ({postponedTodos.length})
                 </Typography>
+                {renderViewToggle(postponedViewMode, handlePostponedViewModeChange)}
               </Box>
 
-              {postponedTodos.length > 0 ? (
+              {postponedViewMode === 'calendar' ? (
+                <PostponedCalendarView
+                  todos={deliveryTodos}
+                  onTodoClick={handleTodoClick}
+                />
+              ) : postponedTodos.length > 0 ? (
                 renderPostponedListContent()
               ) : (
                 <Box sx={{

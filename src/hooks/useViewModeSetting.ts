@@ -15,13 +15,15 @@ interface UseViewModeSettingReturn {
  * Persists a per-user "list | calendar" view preference under
  * `users/{uid}/settings/{settingKey}` in Firebase. Used by both the Today
  * section (todayViewMode) and any other section that toggles between a list
- * and a calendar.
+ * and a calendar. `defaultMode` is the value used until Firebase responds and
+ * whenever no valid preference has been saved yet.
  */
 export const useViewModeSetting = (
   user: User | null,
-  settingKey: string
+  settingKey: string,
+  defaultMode: ViewMode = 'list'
 ): UseViewModeSettingReturn => {
-  const [viewMode, setViewModeState] = useState<ViewMode>('list');
+  const [viewMode, setViewModeState] = useState<ViewMode>(defaultMode);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load view mode preference from Firebase
@@ -30,7 +32,7 @@ export const useViewModeSetting = (
       const viewModeRef = ref(database, `users/${user.uid}/settings/${settingKey}`);
       const unsubscribe = onValue(viewModeRef, (snapshot) => {
         const value = snapshot.val();
-        setViewModeState(value === 'calendar' || value === 'list' ? value : 'list');
+        setViewModeState(value === 'calendar' || value === 'list' ? value : defaultMode);
         setIsLoading(false);
       });
 
@@ -38,7 +40,7 @@ export const useViewModeSetting = (
     } else {
       setIsLoading(false);
     }
-  }, [user?.uid, settingKey]);
+  }, [user?.uid, settingKey, defaultMode]);
 
   // Save view mode preference to Firebase
   const setViewMode = async (mode: ViewMode): Promise<void> => {
